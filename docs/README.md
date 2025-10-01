@@ -1,72 +1,124 @@
-# OCRメモアプリ TesseractLite
+# IPCL Lens Order Automation System
 
-## 概要
-TesseractLiteは、画面上の任意の範囲を選択してテキストを抽出し、テキストファイルとして保存できるOCRメモアプリです。Tesseractを使用し、日本語と英語のテキスト認識に対応しています。
+IPCL注文システムへの自動入力を行うPythonプログラムです。
 
-## 主な機能
-- 画面の任意の範囲からテキストを抽出（OCR機能）
-- 抽出したテキストの編集と保存
-- テキストの追記/上書きモード切替
-- テキストの整形機能（読点除去、句点除去、改行除去、スペース除去）
-- クリップボードへのコピー機能
-- ファイル出力機能
+## 機能
 
-## システム要件
-- Python >= 3.10
-- Tesseract-OCR >= 5.0.0
-- 必要なPythonパッケージ:
-  - tkinter
-  - pyautogui
-  - PIL (Pillow)
-  - pytesseract
+- CSVファイルから患者データを読み込み
+- IPCL注文システムへ自動ログイン
+- 患者情報・測定データの自動入力
+- レンズタイプの自動選択（Cyl値に基づく）
+- レンズ計算の実行
+- 下書き保存
+- 処理済みCSVファイルの自動移動
 
-## インストール方法
-1. Python >= 3.10をインストール
-2. Tesseract-OCRをインストール ([公式ページ](https://github.com/tesseract-ocr/tesseract))
-3. 必要なPythonパッケージをインストール:
+## 必要な環境
+
+- Python 3.8以上
+- Playwright
+
+## セットアップ
+
+1. 依存パッケージのインストール:
 ```bash
-pip install pyautogui pillow pytesseract
+pip install -r requirements.txt
 ```
 
-## 設定
-アプリケーションの設定は `ConfigManager` クラスで管理されています。以下の設定が可能です：
+2. Playwrightブラウザのインストール:
+```bash
+playwright install chromium
+```
 
-- ウィンドウの位置とサイズ
-- テキストエリアのフォント設定
-- OCR範囲選択時の透明度とアウトラインの幅
-- Tesseractのパス設定
+## 使い方
 
-## 使用方法
+### CSVファイルの準備
 
-### 基本的な使い方
-1. アプリケーションを起動
-2. 「OCR範囲選択」ボタンをクリック
-3. 画面上でテキストを抽出したい範囲をドラッグで選択
-4. 抽出されたテキストが表示される(編集可能)
+`csv/` ディレクトリに以下の形式のCSVファイルを配置します：
 
-### テキスト編集機能
-- 追記/上書きモード: テキストの挿入方法を切り替え
-- 読点除去: テキスト中の「、」を除去
-- 句点除去: テキスト中の「。」を除去
-- 改行除去: テキスト中の改行を除去
-- スペース除去: テキスト中のスペースを除去
+ファイル名: `IPCLdata_ID{患者ID}.csv`
 
-### その他の機能
-- 「全文コピー」: 編集中のテキスト全文をクリップボードにコピー
-- 「ファイル出力」: テキストファイルとして保存
-- 「テキストクリア」: 編集領域のテキストをクリア
+必須カラム:
+- name, ID, Birthday, surgerydate
+- R_SPH, R_Cyl, R_Axis, R_ACD, R_Pachy(CCT), R_CLR, R_K1(Kf), R_K1Axis, R_K2(Kf), R_SIA, R_Ins
+- L_SPH, L_Cyl, L_Axis, L_ACD, L_Pachy(CCT), L_CLR, L_K1(Kf), L_K1Axis, L_K2(Kf), L_SIA, L_Ins
+- R_ATA, R_CASIA_WTW_M, R_Caliper_WTW
+- L_ATA, L_CASIA_WTW_M, L_Caliper_WTW
+
+### プログラムの実行
+
+```bash
+python main.py
+```
+
+プログラムは以下の処理を自動的に実行します：
+
+1. `csv/` ディレクトリ内のすべての `IPCLdata_*.csv` ファイルを検索
+2. 各ファイルについて：
+   - データ読み込み
+   - IPCL注文システムへログイン
+   - 患者情報入力
+   - レンズ計算・注文モーダルを開く
+   - 両眼タブを選択
+   - 測定データ入力
+   - レンズタイプ選択（Cyl=0なら Mono、Cyl<0なら Toric）
+   - ATA/WTWデータ入力
+   - レンズ計算実行
+   - 入力保存
+   - 下書き保存
+3. 処理済みCSVファイルを `csv/calculated/` に移動
+
+### ログイン情報の変更
+
+`main.py` の `IPCLOrderAutomation` クラスの `__init__` メソッド内で変更できます：
+
+```python
+self.email = "your-email@example.com"
+self.password = "your-password"
+```
+
+## ディレクトリ構造
+
+```
+IPCLCalc/
+├── main.py              # メインプログラム
+├── csv/                 # CSVファイル格納ディレクトリ
+│   ├── IPCLdata_*.csv  # 処理対象のCSVファイル
+│   └── calculated/     # 処理済みCSVファイル
+└── requirements.txt    # 依存パッケージリスト
+```
+
+## レンズタイプ選択ロジック
+
+- Cyl値が **0** の場合: **IPCL V2.0 Mono** を選択
+- Cyl値が **0以外** の場合: **IPCL V2.0 Toric** を選択
 
 ## 注意事項
-- OCR精度は元画像の品質に依存します
-- 日本語の半角カナ文字や手書き文字には対応していません
-- 画面のDPI設定によってキャプチャ範囲が影響を受ける場合があります
-- 大量のテキストを処理する場合、処理に時間がかかる場合があります
+
+- プログラム実行中はブラウザが自動操作されます
+- `headless=False` に設定されているため、ブラウザウィンドウが表示されます
+- 非表示モードにする場合は `main.py` の `browser = p.chromium.launch(headless=False)` を `headless=True` に変更してください
+- ネットワーク速度によっては待機時間の調整が必要な場合があります
 
 ## トラブルシューティング
-OCRが機能しない場合:
-- Tesseractが正しくインストールされているか確認 
-- Tesseractのパス設定を確認
-- 言語パックが正しくインストールされているか確認(日本語パックのインストールが必要)
+
+### Playwrightが見つからない場合
+
+```bash
+pip install playwright
+playwright install chromium
+```
+
+### ブラウザが起動しない場合
+
+Playwrightのブラウザドライバーを再インストール:
+```bash
+playwright install --force chromium
+```
+
+### タイムアウトエラーが発生する場合
+
+`page.wait_for_timeout()` の値を大きくしてください。
 
 ## ライセンス
-LICENSEファイルを参照
+
+© 2025 All Rights Reserved.
