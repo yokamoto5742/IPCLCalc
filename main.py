@@ -217,7 +217,7 @@ class IPCLOrderAutomation:
             # 誕生日入力フィールドに直接入力（プレースホルダーで識別）
             birthday_input = frame.locator('input[placeholder="dd/mm/yyyy"]').first
             birthday_input.fill(formatted_birthday)
-            birthday_input.press('Enter')  # Enterキーを押す
+            birthday_input.press('Enter')
             page.wait_for_timeout(500)
 
         except Exception as e:
