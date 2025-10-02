@@ -81,9 +81,9 @@ class IPCLOrderAutomation:
         page.goto(self.base_url)
         page.wait_for_load_state('networkidle')
 
-        # ログインフォームに入力
-        page.fill('input[name="LoginForm[email]"]', self.email)
-        page.fill('input[name="LoginForm[password]"]', self.password)
+        # ログインフォームに入力（プレースホルダーとラベルで要素を特定）
+        page.get_by_placeholder("ログインID").fill(self.email)
+        page.get_by_label("パスワード").fill(self.password)
         page.click('button:has-text("サインイン")')
         page.wait_for_load_state('networkidle')
 
