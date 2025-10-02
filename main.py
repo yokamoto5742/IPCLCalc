@@ -385,25 +385,6 @@ class IPCLOrderAutomation:
                 print("[OK] 両眼タブを選択しています...")
                 self.select_both_eyes_tab(page)
 
-                # 患者IDを入力（モーダル内）
-                print("[OK] 患者IDを入力しています...")
-                frame = page.frame_locator('#calculatorFrame')
-                page.wait_for_timeout(1000)
-                try:
-                    frame.get_by_label("患者ID").fill(data['id'])
-                except:
-                    try:
-                        frame.get_by_placeholder("患者ID").fill(data['id'])
-                    except:
-                        try:
-                            frame.locator('input[name*="patient"]').first.fill(data['id'])
-                        except:
-                            print("[WARNING] 患者ID入力をスキップしました")
-
-                # 誕生日を入力
-                print("[OK] 誕生日を入力しています...")
-                self.fill_birthday(page, data['birthday'])
-
                 # 測定データを入力
                 print("[OK] 測定データを入力しています...")
                 self.fill_measurement_data(page, data)
