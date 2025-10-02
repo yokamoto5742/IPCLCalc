@@ -309,12 +309,15 @@ class IPCLOrderAutomation:
         frame.locator('button:has-text("入力保存")').click()
         page.wait_for_timeout(1000)
 
-    def save_draft(self, page: Page):
+    def save_draft(self, page: Page) -> bool:
         """
         下書き保存する
 
         Args:
             page: Playwrightのページオブジェクト
+
+        Returns:
+            bool: 保存に成功した場合True、スキップした場合False
         """
         try:
             # ボタンが有効になるまで待つ（最大10秒）
@@ -326,10 +329,13 @@ class IPCLOrderAutomation:
             if not save_button.is_disabled():
                 save_button.click()
                 page.wait_for_load_state('networkidle')
+                return True
             else:
                 print("[WARNING] 下書き保存ボタンが無効のため、処理をスキップしました")
+                return False
         except Exception as e:
             print(f"[WARNING] 下書き保存をスキップしました: {e}")
+            return False
 
     def move_csv_to_calculated(self, csv_path: Path):
         """
@@ -368,6 +374,7 @@ class IPCLOrderAutomation:
             context = browser.new_context()
             page = context.new_page()
 
+            save_success = False
             try:
                 # ログイン
                 print("[OK] Webサイトにログインしています...")
@@ -407,21 +414,26 @@ class IPCLOrderAutomation:
 
                 # 下書き保存
                 print("[OK] 下書き保存しています...")
-                self.save_draft(page)
+                save_success = self.save_draft(page)
 
-                print("[OK] 注文の下書きが正常に保存されました")
+                if save_success:
+                    print("[OK] 注文の下書きが正常に保存されました")
+                else:
+                    print("[WARNING] ブラウザを開いたままにします。手動で確認してください。")
 
             except Exception as e:
                 print(f"[ERROR] エラーが発生しました: {e}")
                 raise
 
             finally:
-                # ブラウザを閉じる前に少し待機
-                page.wait_for_timeout(2000)
-                browser.close()
+                if save_success:
+                    # ブラウザを閉じる前に少し待機
+                    page.wait_for_timeout(2000)
+                    browser.close()
 
-        # CSVファイルを移動
-        self.move_csv_to_calculated(csv_path)
+        # CSVファイルを移動（保存成功時のみ）
+        if save_success:
+            self.move_csv_to_calculated(csv_path)
 
         print(f"{'='*60}")
         print(f"処理完了: {csv_path.name}")
