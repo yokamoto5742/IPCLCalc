@@ -263,7 +263,7 @@ class IPCLOrderAutomation:
             page: Playwrightのページオブジェクト
         """
         frame = page.frame_locator('#calculatorFrame')
-        frame.locator('button:has-text("入力保存")').click()
+        frame.locator('button#btn-save-draft').click()
         page.wait_for_timeout(1000)
 
     def save_draft(self, page: Page) -> bool:
