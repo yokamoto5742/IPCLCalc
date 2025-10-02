@@ -35,6 +35,7 @@ class IPCLOrderAutomation:
             'name': data['name'],
             'id': data['ID'],
             'birthday': data['birthday'],
+            'sex': data['sex'],
             'surgery_date': data['surgerydate'],
             # 右眼データ
             'r_sph': data['R_SPH'],
