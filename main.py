@@ -26,7 +26,7 @@ class IPCLOrderAutomation:
         Returns:
             患者データの辞書
         """
-        with open(csv_path, 'r', encoding='utf-8') as f:
+        with open(csv_path, encoding='utf-8') as f:
             reader = csv.DictReader(f)
             data = next(reader)
 
