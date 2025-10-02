@@ -365,9 +365,9 @@ class IPCLOrderAutomation:
                 print("[OK] ATA/WTWデータを入力しています...")
                 self.fill_ata_wtw_data(page, data)
 
-                # レンズ計算を実行
-                print("[OK] レンズ計算を実行しています...")
-                self.calculate_lens(page)
+                # # レンズ計算を実行
+                # print("[OK] レンズ計算を実行しています...")
+                # self.calculate_lens(page)
 
                 # 入力を保存
                 print("[OK] 入力を保存しています...")
