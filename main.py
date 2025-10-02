@@ -201,7 +201,7 @@ class IPCLOrderAutomation:
 
     def fill_birthday(self, page: Page, birthday: str):
         """
-        誕生日をカレンダーピッカーで入力する
+        誕生日を入力フィールドに直接入力する
 
         Args:
             page: Playwrightのページオブジェクト
@@ -210,38 +210,18 @@ class IPCLOrderAutomation:
         frame = page.frame_locator('#calculatorFrame')
 
         try:
-            # 日付ピッカーを開く
-            frame.locator('span.input-group-addon:has(i.glyphicon-calendar)').first.click(timeout=1000)
-            page.wait_for_timeout(500)
-
-            # 誕生日を解析（MM/DD/YYYY → DD, MM, YYYY）
+            # 誕生日を解析してdd/mm/yyyy形式に変換（MM/DD/YYYY → dd/mm/yyyy）
             month, day, year = birthday.split('/')
-            target_year = int(year)
+            formatted_birthday = f"{day}/{month}/{year}"
 
-            # 年を選択（2007から目標年まで遡る）
-            current_year = 2007
-            while current_year > target_year:
-                frame.locator('td.prev').first.click()
-                page.wait_for_timeout(200)
-                current_year -= 1
-
-            # 月を選択
-            month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-            month_name = month_names[int(month) - 1]
-            frame.locator(f'span:has-text("{month_name}")').click()
+            # 誕生日入力フィールドに直接入力（プレースホルダーで識別）
+            birthday_input = frame.locator('input[placeholder="dd/mm/yyyy"]').first
+            birthday_input.fill(formatted_birthday)
+            birthday_input.press('Enter')  # Enterキーを押す
             page.wait_for_timeout(500)
 
-            # 日を選択（3番目以降のセルから該当する日を探す）
-            day_cells = frame.locator(f'td:has-text("{int(day)}")').all()
-            for cell in day_cells:
-                if cell.inner_text() == str(int(day)):
-                    cell.click()
-                    break
-
-            page.wait_for_timeout(500)
-        except:
-            print("[WARNING] 誕生日入力をスキップしました")
+        except Exception as e:
+            print(f"[WARNING] 誕生日入力をスキップしました: {e}")
 
 
     def fill_ata_wtw_data(self, page: Page, data: dict):
