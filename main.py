@@ -392,6 +392,10 @@ class IPCLOrderAutomation:
                 print("[OK] 両眼タブを選択しています...")
                 self.select_both_eyes_tab(page)
 
+                # 誕生日を入力
+                print("[OK] 誕生日を入力しています...")
+                self.fill_birthday(page, data['birthday'])
+
                 # 測定データを入力
                 print("[OK] 測定データを入力しています...")
                 self.fill_measurement_data(page, data)
