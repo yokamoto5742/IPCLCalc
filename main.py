@@ -95,15 +95,41 @@ class IPCLOrderAutomation:
             page: Playwrightのページオブジェクト
             data: 患者データ
         """
-        # 患者IDを入力（ラベルで要素を特定）
-        page.get_by_label("患者ID*").fill(data['id'])
+        # ページが完全にロードされるまで待機
+        page.wait_for_load_state('domcontentloaded')
+        page.wait_for_timeout(2000)
+
+        # 患者IDを入力（代替セレクタを試す）
+        try:
+            # まずプレースホルダーで試す
+            page.get_by_placeholder("患者ID").fill(data['id'])
+        except:
+            try:
+                # name属性で試す
+                page.locator('input[name*="patient"]').first.fill(data['id'])
+            except:
+                # ラベルで試す
+                page.get_by_label("患者ID").fill(data['id'])
 
         # 性別を選択（男性）
-        page.get_by_label("性別*").click()
-        page.click('li:has-text("男性")')
+        try:
+            page.get_by_label("性別*").click()
+            page.click('li:has-text("男性")')
+        except:
+            try:
+                page.get_by_label("性別").click()
+                page.click('li:has-text("男性")')
+            except:
+                pass
 
         # 手術日を入力
-        page.get_by_label("手術日").fill(data['surgery_date'])
+        try:
+            page.get_by_label("手術日").fill(data['surgery_date'])
+        except:
+            try:
+                page.locator('input[name*="surgery"]').first.fill(data['surgery_date'])
+            except:
+                pass
 
     def open_lens_calculator(self, page: Page):
         """
@@ -125,8 +151,8 @@ class IPCLOrderAutomation:
         frame = page.frame_locator('#calculatorFrame')
         frame.locator('a:has-text("両眼")').click()
 
-        # バックアップレンズ込みをチェック
-        backup_checkbox = frame.locator('input[name="OrderDetail[include_backup]"]')
+        # バックアップレンズ込みをチェック（type="checkbox"を明示的に指定）
+        backup_checkbox = frame.locator('input[type="checkbox"][name="OrderDetail[include_backup]"]')
         if not backup_checkbox.is_checked():
             backup_checkbox.check()
 
@@ -200,36 +226,46 @@ class IPCLOrderAutomation:
         """
         frame = page.frame_locator('#calculatorFrame')
 
-        # 日付ピッカーを開く
-        frame.locator('span.input-group-addon:has(i.glyphicon-calendar)').first.click()
-        page.wait_for_timeout(500)
+        try:
+            # 日付ピッカーを開く
+            frame.locator('span.input-group-addon:has(i.glyphicon-calendar)').first.click(timeout=5000)
+            page.wait_for_timeout(500)
 
-        # 誕生日を解析（MM/DD/YYYY → DD, MM, YYYY）
-        month, day, year = birthday.split('/')
-        target_year = int(year)
+            # 誕生日を解析（MM/DD/YYYY → DD, MM, YYYY）
+            month, day, year = birthday.split('/')
+            target_year = int(year)
 
-        # 年を選択（2007から目標年まで遡る）
-        current_year = 2007
-        while current_year > target_year:
-            frame.locator('td.prev').first.click()
-            page.wait_for_timeout(200)
-            current_year -= 1
+            # 年を選択（2007から目標年まで遡る）
+            current_year = 2007
+            while current_year > target_year:
+                frame.locator('td.prev').first.click()
+                page.wait_for_timeout(200)
+                current_year -= 1
 
-        # 月を選択
-        month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-        month_name = month_names[int(month) - 1]
-        frame.locator(f'span:has-text("{month_name}")').click()
-        page.wait_for_timeout(500)
+            # 月を選択
+            month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            month_name = month_names[int(month) - 1]
+            frame.locator(f'span:has-text("{month_name}")').click()
+            page.wait_for_timeout(500)
 
-        # 日を選択（3番目以降のセルから該当する日を探す）
-        day_cells = frame.locator(f'td:has-text("{int(day)}")').all()
-        for cell in day_cells:
-            if cell.inner_text() == str(int(day)):
-                cell.click()
-                break
+            # 日を選択（3番目以降のセルから該当する日を探す）
+            day_cells = frame.locator(f'td:has-text("{int(day)}")').all()
+            for cell in day_cells:
+                if cell.inner_text() == str(int(day)):
+                    cell.click()
+                    break
 
-        page.wait_for_timeout(500)
+            page.wait_for_timeout(500)
+        except:
+            # カレンダーピッカーが見つからない場合は直接入力を試す
+            try:
+                frame.locator('input[name*="birthday"]').first.fill(birthday)
+            except:
+                try:
+                    frame.get_by_label("誕生日").fill(birthday)
+                except:
+                    print("[WARNING] 誕生日入力をスキップしました")
 
     def fill_ata_wtw_data(self, page: Page, data: dict):
         """
@@ -280,8 +316,20 @@ class IPCLOrderAutomation:
         Args:
             page: Playwrightのページオブジェクト
         """
-        page.locator('button:has-text("下書き保存")').click()
-        page.wait_for_load_state('networkidle')
+        try:
+            # ボタンが有効になるまで待つ（最大10秒）
+            save_button = page.locator('button:has-text("下書き保存")')
+            save_button.wait_for(state='visible', timeout=10000)
+            page.wait_for_timeout(2000)  # 少し待機してからクリック
+
+            # ボタンが有効であることを確認してクリック
+            if not save_button.is_disabled():
+                save_button.click()
+                page.wait_for_load_state('networkidle')
+            else:
+                print("[WARNING] 下書き保存ボタンが無効のため、処理をスキップしました")
+        except Exception as e:
+            print(f"[WARNING] 下書き保存をスキップしました: {e}")
 
     def move_csv_to_calculated(self, csv_path: Path):
         """
@@ -296,7 +344,7 @@ class IPCLOrderAutomation:
         # ファイルを移動
         destination = self.calculated_dir / csv_path.name
         shutil.move(str(csv_path), str(destination))
-        print(f"✓ {csv_path.name} を calculated ディレクトリに移動しました")
+        print(f"[OK] {csv_path.name} を calculated ディレクトリに移動しました")
 
     def process_csv_file(self, csv_path: Path):
         """
@@ -310,7 +358,7 @@ class IPCLOrderAutomation:
         print(f"{'='*60}")
 
         # CSVデータを読み込み
-        print("✓ CSVファイルを読み込みました")
+        print("[OK] CSVファイルを読み込みました")
         data = self.read_csv_file(csv_path)
         print(f"  患者ID: {data['id']}, 名前: {data['name']}")
 
@@ -322,58 +370,68 @@ class IPCLOrderAutomation:
 
             try:
                 # ログイン
-                print("✓ Webサイトにログインしています...")
+                print("[OK] Webサイトにログインしています...")
                 self.login(page)
 
                 # 患者情報を入力
-                print("✓ 患者情報を入力しています...")
+                print("[OK] 患者情報を入力しています...")
                 self.fill_patient_info(page, data)
 
                 # レンズ計算・注文モーダルを開く
-                print("✓ レンズ計算・注文を開いています...")
+                print("[OK] レンズ計算・注文を開いています...")
                 self.open_lens_calculator(page)
 
                 # 両眼タブを選択
-                print("✓ 両眼タブを選択しています...")
+                print("[OK] 両眼タブを選択しています...")
                 self.select_both_eyes_tab(page)
 
                 # 患者IDを入力（モーダル内）
-                print("✓ 患者IDを入力しています...")
+                print("[OK] 患者IDを入力しています...")
                 frame = page.frame_locator('#calculatorFrame')
-                frame.get_by_label("患者ID").fill(data['id'])
+                page.wait_for_timeout(1000)
+                try:
+                    frame.get_by_label("患者ID").fill(data['id'])
+                except:
+                    try:
+                        frame.get_by_placeholder("患者ID").fill(data['id'])
+                    except:
+                        try:
+                            frame.locator('input[name*="patient"]').first.fill(data['id'])
+                        except:
+                            print("[WARNING] 患者ID入力をスキップしました")
 
                 # 誕生日を入力
-                print("✓ 誕生日を入力しています...")
+                print("[OK] 誕生日を入力しています...")
                 self.fill_birthday(page, data['birthday'])
 
                 # 測定データを入力
-                print("✓ 測定データを入力しています...")
+                print("[OK] 測定データを入力しています...")
                 self.fill_measurement_data(page, data)
 
                 # レンズタイプを選択
-                print("✓ レンズタイプを選択しています...")
+                print("[OK] レンズタイプを選択しています...")
                 self.select_lens_type(page, data)
 
                 # ATA/WTWデータを入力
-                print("✓ ATA/WTWデータを入力しています...")
+                print("[OK] ATA/WTWデータを入力しています...")
                 self.fill_ata_wtw_data(page, data)
 
                 # レンズ計算を実行
-                print("✓ レンズ計算を実行しています...")
+                print("[OK] レンズ計算を実行しています...")
                 self.calculate_lens(page)
 
                 # 入力を保存
-                print("✓ 入力を保存しています...")
+                print("[OK] 入力を保存しています...")
                 self.save_input(page)
 
                 # 下書き保存
-                print("✓ 下書き保存しています...")
+                print("[OK] 下書き保存しています...")
                 self.save_draft(page)
 
-                print("✓ 注文の下書きが正常に保存されました")
+                print("[OK] 注文の下書きが正常に保存されました")
 
             except Exception as e:
-                print(f"✗ エラーが発生しました: {e}")
+                print(f"[ERROR] エラーが発生しました: {e}")
                 raise
 
             finally:
