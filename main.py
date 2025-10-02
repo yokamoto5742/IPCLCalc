@@ -1,14 +1,9 @@
-"""
-IPCL Lens Order Automation System
-CSVファイルから患者データを読み込み、IPCL注文システムに自動入力するプログラム
-"""
-
-import csv
-import os
 import shutil
 from pathlib import Path
-from datetime import datetime
-from playwright.sync_api import sync_playwright, Page, expect
+
+from playwright.sync_api import sync_playwright, Page
+
+import csv
 
 
 class IPCLOrderAutomation:
