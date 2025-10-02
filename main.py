@@ -100,25 +100,15 @@ class IPCLOrderAutomation:
         page.wait_for_timeout(2000)
 
         # 患者IDを入力（代替セレクタを試す）
-        try:
-            # ラベルで試す
-            page.get_by_label("患者ID").fill(data['id'])
-
-        except:
-            try:
-                # name属性で試す
-                page.locator('input[name*="patient"]').first.fill(data['id'])
-            except:
-                # プレースホルダーで試す
-                page.get_by_placeholder("患者ID").fill(data['id'])
+        page.get_by_label("患者ID").fill(data['id'])
 
         # 性別を選択（男性）
         try:
-            page.get_by_label("性別").click()
+            page.get_by_label("性別*").click()
             page.click('li:has-text("男性")')
         except:
             try:
-                page.get_by_label("性別*").click()
+                page.get_by_label("性別").click()
                 page.click('li:has-text("男性")')
             except:
                 pass
