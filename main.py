@@ -34,7 +34,7 @@ class IPCLOrderAutomation:
         patient_data = {
             'name': data['name'],
             'id': data['ID'],
-            'birthday': data['Birthday'],
+            'birthday': data['birthday'],
             'surgery_date': data['surgerydate'],
             # 右眼データ
             'r_sph': data['R_SPH'],
