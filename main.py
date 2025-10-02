@@ -101,23 +101,24 @@ class IPCLOrderAutomation:
 
         # 患者IDを入力（代替セレクタを試す）
         try:
-            # まずプレースホルダーで試す
-            page.get_by_placeholder("患者ID").fill(data['id'])
+            # ラベルで試す
+            page.get_by_label("患者ID").fill(data['id'])
+
         except:
             try:
                 # name属性で試す
                 page.locator('input[name*="patient"]').first.fill(data['id'])
             except:
-                # ラベルで試す
-                page.get_by_label("患者ID").fill(data['id'])
+                # プレースホルダーで試す
+                page.get_by_placeholder("患者ID").fill(data['id'])
 
         # 性別を選択（男性）
         try:
-            page.get_by_label("性別*").click()
+            page.get_by_label("性別").click()
             page.click('li:has-text("男性")')
         except:
             try:
-                page.get_by_label("性別").click()
+                page.get_by_label("性別*").click()
                 page.click('li:has-text("男性")')
             except:
                 pass
@@ -227,43 +228,43 @@ class IPCLOrderAutomation:
         frame = page.frame_locator('#calculatorFrame')
 
         try:
-            # 日付ピッカーを開く
-            frame.locator('span.input-group-addon:has(i.glyphicon-calendar)').first.click(timeout=5000)
-            page.wait_for_timeout(500)
-
-            # 誕生日を解析（MM/DD/YYYY → DD, MM, YYYY）
-            month, day, year = birthday.split('/')
-            target_year = int(year)
-
-            # 年を選択（2007から目標年まで遡る）
-            current_year = 2007
-            while current_year > target_year:
-                frame.locator('td.prev').first.click()
-                page.wait_for_timeout(200)
-                current_year -= 1
-
-            # 月を選択
-            month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-            month_name = month_names[int(month) - 1]
-            frame.locator(f'span:has-text("{month_name}")').click()
-            page.wait_for_timeout(500)
-
-            # 日を選択（3番目以降のセルから該当する日を探す）
-            day_cells = frame.locator(f'td:has-text("{int(day)}")').all()
-            for cell in day_cells:
-                if cell.inner_text() == str(int(day)):
-                    cell.click()
-                    break
-
-            page.wait_for_timeout(500)
+            frame.get_by_label("誕生日").fill(birthday)
         except:
             # カレンダーピッカーが見つからない場合は直接入力を試す
             try:
                 frame.locator('input[name*="birthday"]').first.fill(birthday)
             except:
                 try:
-                    frame.get_by_label("誕生日").fill(birthday)
+                    # 日付ピッカーを開く
+                    frame.locator('span.input-group-addon:has(i.glyphicon-calendar)').first.click(timeout=5000)
+                    page.wait_for_timeout(500)
+
+                    # 誕生日を解析（MM/DD/YYYY → DD, MM, YYYY）
+                    month, day, year = birthday.split('/')
+                    target_year = int(year)
+
+                    # 年を選択（2007から目標年まで遡る）
+                    current_year = 2007
+                    while current_year > target_year:
+                        frame.locator('td.prev').first.click()
+                        page.wait_for_timeout(200)
+                        current_year -= 1
+
+                    # 月を選択
+                    month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                    month_name = month_names[int(month) - 1]
+                    frame.locator(f'span:has-text("{month_name}")').click()
+                    page.wait_for_timeout(500)
+
+                    # 日を選択（3番目以降のセルから該当する日を探す）
+                    day_cells = frame.locator(f'td:has-text("{int(day)}")').all()
+                    for cell in day_cells:
+                        if cell.inner_text() == str(int(day)):
+                            cell.click()
+                            break
+
+                    page.wait_for_timeout(500)
                 except:
                     print("[WARNING] 誕生日入力をスキップしました")
 
@@ -433,7 +434,7 @@ class IPCLOrderAutomation:
                 if save_success:
                     # ブラウザを閉じる前に少し待機
                     page.wait_for_timeout(2000)
-                    browser.close()
+                    # browser.close()
 
         # CSVファイルを移動（保存成功時のみ）
         if save_success:
