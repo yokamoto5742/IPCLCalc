@@ -95,15 +95,15 @@ class IPCLOrderAutomation:
             page: Playwrightのページオブジェクト
             data: 患者データ
         """
-        # 患者IDを入力
-        page.fill('input[name="OrderDetail[patient_id]"]', data['id'])
+        # 患者IDを入力（ラベルで要素を特定）
+        page.get_by_label("患者ID*").fill(data['id'])
 
         # 性別を選択（男性）
-        page.click('div:has(> input[name="OrderDetail[gender]"])')
+        page.get_by_label("性別*").click()
         page.click('li:has-text("男性")')
 
         # 手術日を入力
-        page.fill('input[name="OrderDetail[surgery_date]"]', data['surgery_date'])
+        page.get_by_label("手術日").fill(data['surgery_date'])
 
     def open_lens_calculator(self, page: Page):
         """
@@ -340,7 +340,7 @@ class IPCLOrderAutomation:
                 # 患者IDを入力（モーダル内）
                 print("✓ 患者IDを入力しています...")
                 frame = page.frame_locator('#calculatorFrame')
-                frame.locator('input[name="OrderDetail[patient_id]"]').fill(data['id'])
+                frame.get_by_label("患者ID").fill(data['id'])
 
                 # 誕生日を入力
                 print("✓ 誕生日を入力しています...")
