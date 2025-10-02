@@ -423,9 +423,10 @@ class IPCLOrderAutomation:
 
             finally:
                 if save_success:
+                    pass
                     # ブラウザを閉じる前に少し待機
-                    page.wait_for_timeout(2000)
-                    # browser.close()
+                    # page.wait_for_timeout(2000)
+                    # # browser.close()
 
         # CSVファイルを移動（保存成功時のみ）
         if save_success:
