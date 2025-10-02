@@ -89,26 +89,14 @@ class IPCLOrderAutomation:
         page.wait_for_load_state('networkidle')
 
     def fill_patient_info(self, page: Page, data: dict):
-        """
-        患者情報を入力する
-
-        Args:
-            page: Playwrightのページオブジェクト
-            data: 患者データ
-        """
-        # ページが完全にロードされるまで待機
         page.wait_for_load_state('domcontentloaded')
         page.wait_for_timeout(2000)
 
-        # 患者IDを入力（代替セレクタを試す）
         page.get_by_label("患者ID").fill(data['id'])
 
-        # 性別を選択
         try:
-            # select2ドロップダウンを開く
             page.locator('#select2-order-sex-container').click()
             page.wait_for_timeout(500)
-            # 男性=1番目、女性=2番目のli要素を選択
             sex_index = 0 if data['sex'] == '男性' else 1
             page.locator('li.select2-results__option').nth(sex_index).click()
         except:
@@ -118,7 +106,6 @@ class IPCLOrderAutomation:
             except Exception:
                 print(f"[WARNING] 性別選択をスキップしました")
 
-        # 手術日を入力
         try:
             page.get_by_label("手術日").fill(data['surgery_date'])
         except:
