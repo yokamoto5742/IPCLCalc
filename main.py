@@ -15,9 +15,17 @@ class IPCLOrderAutomation:
         self.calculated_dir = self.csv_dir / "calculated"
 
     def read_csv_file(self, csv_path: Path) -> dict:
-        with open(csv_path, encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            data = next(reader)
+        # cp932, utf-8の順で試行
+        for encoding in ['cp932', 'utf-8']:
+            try:
+                with open(csv_path, encoding=encoding) as f:
+                    reader = csv.DictReader(f)
+                    data = next(reader)
+                break
+            except UnicodeDecodeError:
+                if encoding == 'utf-8':
+                    raise
+                continue
 
         patient_data = {
             'name': data['name'],
