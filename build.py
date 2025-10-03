@@ -7,11 +7,10 @@ def build_executable():
     new_version = update_version()
     subprocess.run([
         "pyinstaller",
-        "--name=マニュアル検索",
+        "--name=IPCLCalc",
         "--windowed",
-        "--icon=assets/ManualSearch.ico",
+        "--icon=assets/app.ico",
         "--add-data", "utils/config.ini:.",
-        "--add-data", "templates:templates",
         "main.py"
     ])
 

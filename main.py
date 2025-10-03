@@ -1,18 +1,24 @@
+import csv
 import shutil
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright, Page
+from playwright.sync_api import Page, sync_playwright
 
-import csv
+from utils.config_manager import load_config
 
 
 class IPCLOrderAutomation:
     def __init__(self):
-        self.base_url = "https://www.ipcl-jp.com/awsystem/order/create"
+        config = load_config()
+        
+        self.base_url = config.get('URL', 'base_url')
         self.email = "m-hosokawa@shinseikai.or.jp"
         self.password = "Shinseikai123!"
-        self.csv_dir = Path(__file__).parent / "csv"
-        self.calculated_dir = self.csv_dir / "calculated"
+        self.csv_dir = Path(config.get('Paths', 'csv_dir'))
+        self.calculated_dir = Path(config.get('Paths', 'calculated_dir'))
+        self.error_dir = Path(config.get('Paths', 'error_dir'))
+        self.log_dir = Path(config.get('Paths', 'log_dir'))
+        self.headless = config.getboolean('Settings', 'headless')
 
     def read_csv_file(self, csv_path: Path) -> dict:
         # cp932, utf-8の順で試行
@@ -228,7 +234,7 @@ class IPCLOrderAutomation:
         print(f"  患者ID: {data['id']}, 名前: {data['name']}")
 
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
+            browser = p.chromium.launch(headless=self.headless)
             context = browser.new_context()
             page = context.new_page()
 
