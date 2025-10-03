@@ -61,16 +61,9 @@ class IPCLOrderAutomation:
         return patient_data
 
     def login(self, page: Page):
-        """
-        Webサイトにログインする
-
-        Args:
-            page: Playwrightのページオブジェクト
-        """
         page.goto(self.base_url)
         page.wait_for_load_state('networkidle')
 
-        # ログインフォームに入力（プレースホルダーとラベルで要素を特定）
         page.get_by_placeholder("ログインID").fill(self.email)
         page.get_by_label("パスワード").fill(self.password)
         page.click('button:has-text("サインイン")')
@@ -103,38 +96,18 @@ class IPCLOrderAutomation:
                 pass
 
     def open_lens_calculator(self, page: Page):
-        """
-        レンズ計算・注文モーダルを開く
-
-        Args:
-            page: Playwrightのページオブジェクト
-        """
         page.click('button:has-text("レンズ計算・注文")')
         page.wait_for_timeout(1000)
 
     def select_both_eyes_tab(self, page: Page):
-        """
-        両眼タブを選択し、バックアップレンズ込みをチェック
-
-        Args:
-            page: Playwrightのページオブジェクト
-        """
         frame = page.frame_locator('#calculatorFrame')
         frame.locator('a:has-text("両眼")').click()
 
-        # バックアップレンズ込みをチェック（type="checkbox"を明示的に指定）
         backup_checkbox = frame.locator('input[type="checkbox"][name="OrderDetail[include_backup]"]')
         if not backup_checkbox.is_checked():
             backup_checkbox.check()
 
     def fill_measurement_data(self, page: Page, data: dict):
-        """
-        右眼・左眼の測定データを入力する
-
-        Args:
-            page: Playwrightのページオブジェクト
-            data: 患者データ
-        """
         frame = page.frame_locator('#calculatorFrame')
 
         # 右眼データ
@@ -164,23 +137,14 @@ class IPCLOrderAutomation:
         frame.locator('input[name="OrderDetail[l_ins]"]').fill(data['l_ins'])
 
     def select_lens_type(self, page: Page, data: dict):
-        """
-        Cyl値に基づいてレンズタイプを選択する
-
-        Args:
-            page: Playwrightのページオブジェクト
-            data: 患者データ
-        """
         frame = page.frame_locator('#calculatorFrame')
 
-        # 右眼のレンズタイプを選択
         r_cyl = float(data['r_cyl'])
         if r_cyl == 0:
             frame.locator('input[name="OrderDetail[ipcl_r]"][value="IPCL V2.0 Mono"]').check()
         else:
             frame.locator('input[name="OrderDetail[ipcl_r]"][value="IPCL V2.0 Toric"]').check()
 
-        # 左眼のレンズタイプを選択
         l_cyl = float(data['l_cyl'])
         if l_cyl == 0:
             frame.locator('input[name="OrderDetail[ipcl_l]"][value="IPCL V2.0 Mono"]').check()
@@ -188,24 +152,16 @@ class IPCLOrderAutomation:
             frame.locator('input[name="OrderDetail[ipcl_l]"][value="IPCL V2.0 Toric"]').check()
 
     def fill_birthday(self, page: Page, birthday: str):
-        """
-        誕生日を入力フィールドに直接入力する
-
-        Args:
-            page: Playwrightのページオブジェクト
-            birthday: 誕生日（MM/DD/YYYY形式）
-        """
         frame = page.frame_locator('#calculatorFrame')
 
         try:
-            # 誕生日を解析してdd/mm/yyyy形式に変換（MM/DD/YYYY → dd/mm/yyyy）
             month, day, year = birthday.split('/')
             formatted_birthday = f"{day}/{month}/{year}"
 
             # 誕生日入力フィールドに直接入力（プレースホルダーで識別）
             birthday_input = frame.locator('input[placeholder="dd/mm/yyyy"]').first
             birthday_input.fill(formatted_birthday)
-            birthday_input.press('Enter')
+            birthday_input.press('Enter') # Enterキーを押さないと登録されない
             page.wait_for_timeout(500)
 
         except Exception as e:
@@ -213,13 +169,6 @@ class IPCLOrderAutomation:
 
 
     def fill_ata_wtw_data(self, page: Page, data: dict):
-        """
-        ATA/WTWデータを入力する
-
-        Args:
-            page: Playwrightのページオブジェクト
-            data: 患者データ
-        """
         frame = page.frame_locator('#calculatorFrame')
 
         # 右眼のATA/WTWデータ
@@ -232,45 +181,17 @@ class IPCLOrderAutomation:
         frame.locator('input[name="OrderDetail[l_casia_manual]"]').fill(data['l_casia_wtw_m'])
         frame.locator('input[name="OrderDetail[l_caliper_manual]"]').fill(data['l_caliper_wtw'])
 
-    def calculate_lens(self, page: Page):
-        """
-        レンズ計算を実行する
-
-        Args:
-            page: Playwrightのページオブジェクト
-        """
-        frame = page.frame_locator('#calculatorFrame')
-        frame.locator('button:has-text("レンズ計算")').click()
-        page.wait_for_timeout(2000)  # 計算結果が表示されるまで待機
-
     def save_input(self, page: Page):
-        """
-        入力を保存する
-
-        Args:
-            page: Playwrightのページオブジェクト
-        """
         frame = page.frame_locator('#calculatorFrame')
         frame.locator('button#btn-save-draft').click()
         page.wait_for_timeout(1000)
 
     def save_draft(self, page: Page) -> bool:
-        """
-        下書き保存する
-
-        Args:
-            page: Playwrightのページオブジェクト
-
-        Returns:
-            bool: 保存に成功した場合True、スキップした場合False
-        """
         try:
-            # ボタンが有効になるまで待つ（最大10秒）
             save_button = page.locator('button:has-text("下書き保存")')
-            save_button.wait_for(state='visible', timeout=10000)
-            page.wait_for_timeout(2000)  # 少し待機してからクリック
+            save_button.wait_for(state='visible', timeout=5000)
+            page.wait_for_timeout(2000)
 
-            # ボタンが有効であることを確認してクリック
             if not save_button.is_disabled():
                 save_button.click()
                 page.wait_for_load_state('networkidle')
@@ -283,39 +204,23 @@ class IPCLOrderAutomation:
             return False
 
     def move_csv_to_calculated(self, csv_path: Path):
-        """
-        処理済みCSVファイルをcalculatedディレクトリに移動する
-
-        Args:
-            csv_path: CSVファイルのパス
-        """
-        # calculatedディレクトリが存在しない場合は作成
         self.calculated_dir.mkdir(exist_ok=True)
 
-        # ファイルを移動
         destination = self.calculated_dir / csv_path.name
         shutil.move(str(csv_path), str(destination))
         print(f"[OK] {csv_path.name} を calculated ディレクトリに移動しました")
 
     def process_csv_file(self, csv_path: Path):
-        """
-        CSVファイルを処理してIPCL注文を作成する
-
-        Args:
-            csv_path: CSVファイルのパス
-        """
         print(f"\n{'='*60}")
         print(f"処理開始: {csv_path.name}")
         print(f"{'='*60}")
 
-        # CSVデータを読み込み
         print("[OK] CSVファイルを読み込みました")
         data = self.read_csv_file(csv_path)
         print(f"  患者ID: {data['id']}, 名前: {data['name']}")
 
-        # Playwrightでブラウザを起動
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)  # headless=Trueで非表示モード
+            browser = p.chromium.launch(headless=False)
             context = browser.new_context()
             page = context.new_page()
 
@@ -353,10 +258,6 @@ class IPCLOrderAutomation:
                 print("[OK] ATA/WTWデータを入力しています...")
                 self.fill_ata_wtw_data(page, data)
 
-                # # レンズ計算を実行
-                # print("[OK] レンズ計算を実行しています...")
-                # self.calculate_lens(page)
-
                 # 入力を保存
                 print("[OK] 入力を保存しています...")
                 self.save_input(page)
@@ -376,12 +277,9 @@ class IPCLOrderAutomation:
 
             finally:
                 if save_success:
-                    pass
-                    # ブラウザを閉じる前に少し待機
-                    # page.wait_for_timeout(2000)
-                    # # browser.close()
+                    page.wait_for_timeout(2000)
+                    browser.close()
 
-        # CSVファイルを移動（保存成功時のみ）
         if save_success:
             self.move_csv_to_calculated(csv_path)
 
@@ -390,9 +288,6 @@ class IPCLOrderAutomation:
         print(f"{'='*60}\n")
 
     def process_all_csv_files(self):
-        """
-        csvディレクトリ内のすべてのCSVファイルを処理する
-        """
         csv_files = list(self.csv_dir.glob('IPCLdata_*.csv'))
 
         if not csv_files:
@@ -408,7 +303,6 @@ class IPCLOrderAutomation:
 
 
 def main():
-    """メイン処理"""
     automation = IPCLOrderAutomation()
     automation.process_all_csv_files()
 
