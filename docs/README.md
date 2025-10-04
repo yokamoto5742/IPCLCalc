@@ -121,4 +121,4 @@ playwright install --force chromium
 
 ## ライセンス
 
-© 2025 All Rights Reserved.
+Apache License 2.0
