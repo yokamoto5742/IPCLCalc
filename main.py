@@ -2,6 +2,7 @@ import csv
 import os
 import shutil
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from playwright.sync_api import Page, sync_playwright
@@ -34,6 +35,11 @@ class IPCLOrderAutomation:
         self.error_dir = Path(config.get('Paths', 'error_dir'))
         self.log_dir = Path(config.get('Paths', 'log_dir'))
         self.headless = config.getboolean('Settings', 'headless')
+
+        # PDFダウンロード先ディレクトリを設定
+        self.pdf_dir = self.csv_dir / 'pdf'
+        self.pdf_dir.mkdir(exist_ok=True)
+        print(f"[OK] PDFダウンロード先: {self.pdf_dir}")
 
     def read_csv_file(self, csv_path: Path) -> dict:
         # cp932, utf-8の順で試行
@@ -192,12 +198,11 @@ class IPCLOrderAutomation:
             # 誕生日入力フィールドに直接入力（プレースホルダーで識別）
             birthday_input = frame.locator('input[placeholder="dd/mm/yyyy"]').first
             birthday_input.fill(formatted_birthday)
-            birthday_input.press('Enter') # Enterキーを押さないと登録されない
+            birthday_input.press('Enter')  # Enterキーを押さないと登録されない
             page.wait_for_timeout(500)
 
         except Exception as e:
             print(f"[WARNING] 誕生日入力をスキップしました: {e}")
-
 
     def fill_ata_wtw_data(self, page: Page, data: dict):
         frame = page.frame_locator('#calculatorFrame')
@@ -217,10 +222,35 @@ class IPCLOrderAutomation:
         frame.locator('button#btn-calculate').click()
         page.wait_for_timeout(1000)
 
-    def click_save_pdf_button(self, page: Page):
+    def click_save_pdf_button(self, page: Page, patient_id: str, patient_name: str) -> str:
+        """PDFを保存し、保存先パスを返す"""
         frame = page.frame_locator('#calculatorFrame')
-        frame.locator('a:has(i.far.fa-file-pdf)').click()
-        page.wait_for_timeout(1000)
+
+        try:
+            # ダウンロードを待機
+            with page.expect_download() as download_info:
+                frame.locator('a:has(i.far.fa-file-pdf)').click()
+
+            download = download_info.value
+
+            # デバッグ情報を表示
+            print(f"[DEBUG] 一時ファイル: {download.path()}")
+            print(f"[DEBUG] 推奨ファイル名: {download.suggested_filename}")
+
+            # ファイル名を生成（患者IDと患者名を含む）
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            pdf_filename = f"IPCL_{patient_id}_{patient_name}_{timestamp}.pdf"
+            pdf_path = self.pdf_dir / pdf_filename
+
+            # ダウンロードしたファイルを指定先に保存
+            download.save_as(pdf_path)
+
+            print(f"[OK] PDFを保存しました: {pdf_path}")
+            return str(pdf_path)
+
+        except Exception as e:
+            print(f"[ERROR] PDF保存中にエラーが発生しました: {e}")
+            raise
 
     def save_input(self, page: Page):
         frame = page.frame_locator('#calculatorFrame')
@@ -252,9 +282,9 @@ class IPCLOrderAutomation:
         print(f"[OK] {csv_path.name} を calculated ディレクトリに移動しました")
 
     def process_csv_file(self, csv_path: Path):
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"処理開始: {csv_path.name}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         print("[OK] CSVファイルを読み込みました")
         data = self.read_csv_file(csv_path)
@@ -262,10 +292,16 @@ class IPCLOrderAutomation:
 
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=self.headless)
-            context = browser.new_context()
+
+            # ダウンロード先を指定してコンテキストを作成
+            context = browser.new_context(
+                accept_downloads=True
+            )
             page = context.new_page()
 
             save_success = False
+            pdf_path = None
+
             try:
                 # ログイン
                 print("[OK] Webサイトにログインしています...")
@@ -305,7 +341,7 @@ class IPCLOrderAutomation:
 
                 # PDF保存
                 print("[OK] PDFを保存しています...")
-                self.click_save_pdf_button(page)
+                pdf_path = self.click_save_pdf_button(page, data['id'], data['name'])
 
                 # 入力を保存
                 print("[OK] 入力を保存しています...")
@@ -317,6 +353,8 @@ class IPCLOrderAutomation:
 
                 if save_success:
                     print("[OK] 注文の下書きが正常に保存されました")
+                    if pdf_path:
+                        print(f"[OK] PDF保存先: {pdf_path}")
                 else:
                     print("[WARNING] ブラウザを開いたままにします。手動で確認してください。")
 
@@ -332,9 +370,9 @@ class IPCLOrderAutomation:
         if save_success:
             self.move_csv_to_calculated(csv_path)
 
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print(f"処理完了: {csv_path.name}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
     def process_all_csv_files(self):
         csv_files = list(self.csv_dir.glob('IPCLdata_*.csv'))
@@ -349,6 +387,7 @@ class IPCLOrderAutomation:
             self.process_csv_file(csv_file)
 
         print("\nすべてのファイルの処理が完了しました")
+        print(f"PDFの保存先: {self.pdf_dir}")
 
 
 def main():
