@@ -118,9 +118,11 @@ class IPCLOrderAutomation:
 
         try:
             page.get_by_label("手術日").fill(data['surgery_date'])
+            page.get_by_label("手術日").press('Enter')
         except:
             try:
                 page.locator('input[name*="surgery"]').first.fill(data['surgery_date'])
+                page.locator('input[name*="surgery"]').first.press('Enter')
             except:
                 pass
 
