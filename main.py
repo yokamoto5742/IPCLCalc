@@ -6,6 +6,7 @@ from pathlib import Path
 
 from playwright.sync_api import Page, sync_playwright
 
+from service.draft_launch import launch_draft_page
 from utils.config_manager import load_config, load_environment_variables
 
 
@@ -333,6 +334,7 @@ class IPCLOrderAutomation:
 def main():
     automation = IPCLOrderAutomation()
     automation.process_all_csv_files()
+    launch_draft_page()
 
 
 if __name__ == "__main__":
