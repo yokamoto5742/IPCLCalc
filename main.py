@@ -212,9 +212,19 @@ class IPCLOrderAutomation:
         frame.locator('input[name="OrderDetail[l_casia_manual]"]').fill(data['l_casia_wtw_m'])
         frame.locator('input[name="OrderDetail[l_caliper_manual]"]').fill(data['l_caliper_wtw'])
 
+    def click_calculate_button(self, page: Page):
+        frame = page.frame_locator('#calculatorFrame')
+        frame.locator('button#btn-calculate').click()
+        page.wait_for_timeout(1000)
+
+    def click_save_pdf_button(self, page: Page):
+        frame = page.frame_locator('#calculatorFrame')
+        frame.locator('a:has(i.far.fa-file-pdf)').click()
+        page.wait_for_timeout(1000)
+
     def save_input(self, page: Page):
         frame = page.frame_locator('#calculatorFrame')
-        frame.locator('button#btn-save-draft').click()
+        frame.locator('button#btn-save-draft-modal').click()
         page.wait_for_timeout(1000)
 
     def save_draft(self, page: Page) -> bool:
@@ -288,6 +298,14 @@ class IPCLOrderAutomation:
                 # ATA/WTWデータを入力
                 print("[OK] ATA/WTWデータを入力しています...")
                 self.fill_ata_wtw_data(page, data)
+
+                # レンズ計算
+                print("[OK] レンズ計算を実行しています...")
+                self.click_calculate_button(page)
+
+                # PDF保存
+                print("[OK] PDFを保存しています...")
+                self.click_save_pdf_button(page)
 
                 # 入力を保存
                 print("[OK] 入力を保存しています...")
