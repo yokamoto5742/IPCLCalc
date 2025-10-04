@@ -3,9 +3,9 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## House Rules:
-- 文章ではなくパッチの差分を返すこと。Return patch diffs, not prose.
-- 不明な点がある場合は、トレードオフを明記した2つの選択肢を提案すること（80語以内）。
-- 変更範囲は最小限に抑えること
+- 文章ではなくパッチの差分を返す。Return patch diffs, not prose.
+- 変更範囲は最小限に抑える。
+- コードは許可がなくても直接変更する。
 - Pythonコードのimport文は以下の適切な順序に並べ替えてください。
 標準ライブラリ
 サードパーティライブラリ
