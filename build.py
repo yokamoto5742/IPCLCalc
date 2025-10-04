@@ -33,7 +33,7 @@ def build_executable():
         "--name=IPCLCalc",
         "--windowed",
         "--icon=assets/app.ico",
-        "--add-data", "utils/config.ini;",
+        "--add-data", "utils/config.ini;.",
         "--hidden-import", "playwright",
         "--hidden-import", "playwright.sync_api",
         "--collect-all", "playwright",
@@ -42,18 +42,19 @@ def build_executable():
     if playwright_browsers_path and os.path.exists(playwright_browsers_path):
         print(f"[OK] Playwrightブラウザを含めます: {playwright_browsers_path}")
 
-        chromium_dirs = [d for d in os.listdir(playwright_browsers_path)
-                         if d.startswith('chromium-')]
+        browser_dirs = [d for d in os.listdir(playwright_browsers_path)
+                       if d.startswith('chromium-') or d.startswith('chromium_headless_shell-')]
 
-        if chromium_dirs:
-            chromium_dir = os.path.join(playwright_browsers_path, chromium_dirs[0])
-            command.extend([
-                "--add-data",
-                f"{chromium_dir};playwright/driver/package/.local-browsers/{chromium_dirs[0]}"
-            ])
-            print(f"[OK] {chromium_dirs[0]} を含めました")
+        if browser_dirs:
+            for browser_dir_name in browser_dirs:
+                browser_dir = os.path.join(playwright_browsers_path, browser_dir_name)
+                command.extend([
+                    "--add-data",
+                    f"{browser_dir};playwright/driver/package/.local-browsers/{browser_dir_name}"
+                ])
+                print(f"[OK] {browser_dir_name} を含めました")
         else:
-            print("[ERROR] chromiumディレクトリが見つかりません")
+            print("[ERROR] Chromiumブラウザディレクトリが見つかりません")
             return None
 
     command.append("main.py")

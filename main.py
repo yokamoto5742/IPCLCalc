@@ -1,5 +1,7 @@
 import csv
+import os
 import shutil
+import sys
 from pathlib import Path
 
 from playwright.sync_api import Page, sync_playwright
@@ -9,6 +11,16 @@ from utils.config_manager import load_config
 
 class IPCLOrderAutomation:
     def __init__(self):
+
+        if getattr(sys, 'frozen', False):
+            base_path = Path(sys._MEIPASS)
+            playwright_browsers = base_path / 'playwright' / 'driver' / 'package' / '.local-browsers'
+            if playwright_browsers.exists():
+                os.environ['PLAYWRIGHT_BROWSERS_PATH'] = str(playwright_browsers)
+                print(f"[OK] Playwrightブラウザパス設定: {playwright_browsers}")
+            else:
+                print(f"[WARNING] Playwrightブラウザパスが見つかりません: {playwright_browsers}")
+
         config = load_config()
         
         self.base_url = config.get('URL', 'base_url')
