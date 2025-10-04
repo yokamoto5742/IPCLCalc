@@ -6,7 +6,7 @@ from pathlib import Path
 
 from playwright.sync_api import Page, sync_playwright
 
-from utils.config_manager import load_config
+from utils.config_manager import load_config, load_environment_variables
 
 
 class IPCLOrderAutomation:
@@ -21,11 +21,13 @@ class IPCLOrderAutomation:
             else:
                 print(f"[WARNING] Playwrightブラウザパスが見つかりません: {playwright_browsers}")
 
+        load_environment_variables()
+
         config = load_config()
-        
+
         self.base_url = config.get('URL', 'base_url')
-        self.email = "m-hosokawa@shinseikai.or.jp"
-        self.password = "Shinseikai123!"
+        self.email = os.getenv('EMAIL')
+        self.password = os.getenv('PASSWORD')
         self.csv_dir = Path(config.get('Paths', 'csv_dir'))
         self.calculated_dir = Path(config.get('Paths', 'calculated_dir'))
         self.error_dir = Path(config.get('Paths', 'error_dir'))
