@@ -21,9 +21,10 @@ class CSVHandler:
         patient_data = {
             'name': data['name'],
             'id': data['ID'],
-            'birthday': data['birthday'],
             'sex': data['sex'],
+            'birthday': data['birthday'],
             'surgery_date': data['surgerydate'],
+            'eye': data['eye'],
             # 右眼データ
             'r_sph': data['R_SPH'],
             'r_cyl': data['R_Cyl'],
