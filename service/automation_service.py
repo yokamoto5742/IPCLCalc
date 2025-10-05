@@ -2,7 +2,6 @@ import os
 import sys
 import tkinter as tk
 from pathlib import Path
-from tkinter import ttk
 
 from playwright.sync_api import sync_playwright
 
@@ -12,6 +11,7 @@ from service.lens_calculator_service import LensCalculatorService
 from service.patient_service import PatientService
 from service.save_service import SaveService
 from utils.config_manager import load_config, load_environment_variables
+
 
 class IPCLOrderAutomation:
     def __init__(self):
