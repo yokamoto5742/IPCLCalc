@@ -1,6 +1,8 @@
 import os
 import sys
+import tkinter as tk
 from pathlib import Path
+from tkinter import ttk
 
 from playwright.sync_api import sync_playwright
 
@@ -11,9 +13,12 @@ from service.patient_service import PatientService
 from service.save_service import SaveService
 from utils.config_manager import load_config, load_environment_variables
 
-
 class IPCLOrderAutomation:
     def __init__(self):
+        # 進捗ウィンドウの初期化
+        self.root = None
+        self.progress_window = None
+        self.progress_label = None
 
         if getattr(sys, 'frozen', False):
             base_path = Path(sys._MEIPASS)
@@ -49,21 +54,68 @@ class IPCLOrderAutomation:
         self.lens_calculator_service = LensCalculatorService()
         self.save_service = SaveService(self.pdf_dir, self.calculated_dir)
 
+    def create_progress_window(self):
+        """進捗ウィンドウを作成"""
+        self.root = tk.Tk()
+        self.root.withdraw()
+        
+        self.progress_window = tk.Toplevel(self.root)
+        self.progress_window.title("処理進捗")
+        self.progress_window.geometry("500x150")
+        self.progress_window.resizable(False, False)
+        
+        # ウィンドウを中央に配置
+        self.progress_window.update_idletasks()
+        width = self.progress_window.winfo_width()
+        height = self.progress_window.winfo_height()
+        x = (self.progress_window.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.progress_window.winfo_screenheight() // 2) - (height // 2)
+        self.progress_window.geometry(f"{width}x{height}+{x}+{y}")
+        
+        # ラベルを作成
+        self.progress_label = tk.Label(
+            self.progress_window,
+            text="処理を開始します...",
+            font=("MS Gothic", 11),
+            wraplength=450,
+            justify=tk.LEFT,
+            padx=20,
+            pady=20
+        )
+        self.progress_label.pack(expand=True, fill=tk.BOTH)
+        
+        self.progress_window.update()
+
+    def update_progress(self, message: str):
+        """進捗メッセージを更新"""
+        print(message)  # コンソールにも出力
+        if self.progress_label:
+            self.progress_label.config(text=message)
+            self.progress_window.update()
+
+    def close_progress_window(self):
+        """進捗ウィンドウを閉じる"""
+        if self.progress_window:
+            self.progress_window.destroy()
+        if self.root:
+            self.root.destroy()
+
     def process_csv_file(self, csv_path: Path):
         """CSVファイルを処理"""
         print(f"\n{'=' * 60}")
         print(f"処理開始: {csv_path.name}")
         print(f"{'=' * 60}")
 
-        print("[OK] CSVファイルを読み込みました")
+        self.update_progress(f"CSVファイルを読み込み中...\n{csv_path.name}")
         all_data = self.csv_handler.read_csv_file(csv_path)
-        print(f"  {len(all_data)}件のデータを読み込みました")
+        self.update_progress(f"{len(all_data)}件のデータを読み込みました")
 
         all_success = True
 
         for idx, data in enumerate(all_data, 1):
-            print(f"\n--- データ {idx}/{len(all_data)} の処理 ---")
+            print(f"\n[{idx}/{len(all_data)}件目を処理中…]")
             print(f"  患者ID: {data['id']}, 名前: {data['name']}, 眼: {data['eye']}")
+            self.update_progress(f"[{idx}/{len(all_data)}件目を処理中…]\n患者ID: {data['id']}\n名前: {data['name']}\n眼: {data['eye']}")
 
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=self.headless)
@@ -79,55 +131,55 @@ class IPCLOrderAutomation:
 
                 try:
                     # ログイン
-                    print("[OK] Webサイトにログインしています...")
+                    self.update_progress(f"[{idx}/{len(all_data)}] Webサイトにログイン中...")
                     self.auth_service.login(page)
 
                     # 患者情報を入力
-                    print("[OK] 患者情報を入力しています...")
+                    self.update_progress(f"[{idx}/{len(all_data)}] 患者情報を入力中...")
                     self.patient_service.fill_patient_info(page, data)
 
                     # レンズ計算・注文モーダルを開く
-                    print("[OK] レンズ計算・注文を開いています...")
+                    self.update_progress(f"[{idx}/{len(all_data)}] レンズ計算・注文を開いています...")
                     self.lens_calculator_service.open_lens_calculator(page)
 
                     # 眼別タブを選択
-                    print(f"[OK] {data['eye']}タブを選択しています...")
+                    self.update_progress(f"[{idx}/{len(all_data)}] {data['eye']}タブを選択中...")
                     self.lens_calculator_service.select_eye_tab(page, data['eye'])
 
                     # 誕生日を入力
-                    print("[OK] 誕生日を入力しています...")
+                    self.update_progress(f"[{idx}/{len(all_data)}] 誕生日を入力中...")
                     self.patient_service.fill_birthday(page, data['birthday'])
 
                     # 測定データを入力
-                    print("[OK] 測定データを入力しています...")
+                    self.update_progress(f"[{idx}/{len(all_data)}] 測定データを入力中...")
                     self.lens_calculator_service.fill_measurement_data(page, data, data['eye'])
 
                     # レンズタイプを選択
-                    print("[OK] レンズタイプを選択しています...")
+                    self.update_progress(f"[{idx}/{len(all_data)}] レンズタイプを選択中...")
                     self.lens_calculator_service.select_lens_type(page, data, data['eye'])
 
                     # ATA/WTWデータを入力
-                    print("[OK] ATA/WTWデータを入力しています...")
+                    self.update_progress(f"[{idx}/{len(all_data)}] ATA/WTWデータを入力中...")
                     self.lens_calculator_service.fill_ata_wtw_data(page, data, data['eye'])
 
                     # レンズ計算
-                    print("[OK] レンズ計算を実行しています...")
+                    self.update_progress(f"[{idx}/{len(all_data)}] レンズ計算を実行中...")
                     self.lens_calculator_service.click_calculate_button(page)
 
                     # PDF保存
-                    print("[OK] PDFを保存しています...")
+                    self.update_progress(f"[{idx}/{len(all_data)}] PDFを保存中...")
                     pdf_path = self.save_service.click_save_pdf_button(page, data['id'], data['name'])
 
                     # 入力を保存
-                    print("[OK] 入力を保存しています...")
+                    self.update_progress(f"[{idx}/{len(all_data)}] 入力を保存中...")
                     self.save_service.save_input(page)
 
                     # 下書き保存
-                    print("[OK] 下書き保存しています...")
+                    self.update_progress(f"[{idx}/{len(all_data)}] 下書き保存中...")
                     save_success = self.save_service.save_draft(page)
 
                     if save_success:
-                        print("[OK] 注文の下書きが正常に保存されました")
+                        self.update_progress(f"[{idx}/{len(all_data)}] 注文の下書きが正常に保存されました")
                         if pdf_path:
                             print(f"[OK] PDF保存先: {pdf_path}")
                     else:
@@ -135,7 +187,9 @@ class IPCLOrderAutomation:
                         all_success = False
 
                 except Exception as e:
-                    print(f"[ERROR] エラーが発生しました: {e}")
+                    error_msg = f"[ERROR] エラーが発生しました: {e}"
+                    print(error_msg)
+                    self.update_progress(error_msg)
                     all_success = False
                     raise
 
@@ -159,10 +213,23 @@ class IPCLOrderAutomation:
             print("処理するCSVファイルが見つかりませんでした")
             return
 
-        print(f"\n{len(csv_files)}件のCSVファイルを処理します")
+        # 進捗ウィンドウを作成
+        self.create_progress_window()
 
-        for csv_file in csv_files:
-            self.process_csv_file(csv_file)
+        try:
+            print(f"\n{len(csv_files)}件のCSVファイルを処理します")
+            self.update_progress(f"{len(csv_files)}件のCSVファイルを処理します")
 
-        print("\nすべてのファイルの処理が完了しました")
-        print(f"PDFの保存先: {self.pdf_dir}")
+            for idx, csv_file in enumerate(csv_files, 1):
+                print(f"\n[{idx}/{len(csv_files)}件目を処理中…]")
+                self.update_progress(f"[{idx}/{len(csv_files)}件目のファイルを処理中…]\n{csv_file.name}")
+                self.process_csv_file(csv_file)
+
+            print("\nすべてのファイルの処理が完了しました")
+            print(f"PDFの保存先: {self.pdf_dir}")
+            self.update_progress(f"すべてのファイルの処理が完了しました\n\nPDFの保存先:\n{self.pdf_dir}")
+        
+        finally:
+            # 3秒後にウィンドウを閉じる
+            if self.progress_window:
+                self.progress_window.after(3000, self.close_progress_window)
