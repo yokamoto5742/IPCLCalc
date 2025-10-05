@@ -84,9 +84,9 @@ class IPCLOrderAutomation:
                 print("[OK] レンズ計算・注文を開いています...")
                 self.lens_calculator_service.open_lens_calculator(page)
 
-                # 両眼タブを選択
-                print("[OK] 両眼タブを選択しています...")
-                self.lens_calculator_service.select_both_eyes_tab(page)
+                # 眼別タブを選択
+                print(f"[OK] {data['eye']}タブを選択しています...")
+                self.lens_calculator_service.select_eye_tab(page, data['eye'])
 
                 # 誕生日を入力
                 print("[OK] 誕生日を入力しています...")
@@ -94,15 +94,15 @@ class IPCLOrderAutomation:
 
                 # 測定データを入力
                 print("[OK] 測定データを入力しています...")
-                self.lens_calculator_service.fill_measurement_data(page, data)
+                self.lens_calculator_service.fill_measurement_data(page, data, data['eye'])
 
                 # レンズタイプを選択
                 print("[OK] レンズタイプを選択しています...")
-                self.lens_calculator_service.select_lens_type(page, data)
+                self.lens_calculator_service.select_lens_type(page, data, data['eye'])
 
                 # ATA/WTWデータを入力
                 print("[OK] ATA/WTWデータを入力しています...")
-                self.lens_calculator_service.fill_ata_wtw_data(page, data)
+                self.lens_calculator_service.fill_ata_wtw_data(page, data, data['eye'])
 
                 # レンズ計算
                 print("[OK] レンズ計算を実行しています...")
