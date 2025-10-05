@@ -56,87 +56,95 @@ class IPCLOrderAutomation:
         print(f"{'=' * 60}")
 
         print("[OK] CSVファイルを読み込みました")
-        data = self.csv_handler.read_csv_file(csv_path)
-        print(f"  患者ID: {data['id']}, 名前: {data['name']}")
+        all_data = self.csv_handler.read_csv_file(csv_path)
+        print(f"  {len(all_data)}件のデータを読み込みました")
 
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=self.headless)
+        all_success = True
 
-            # ダウンロード先を指定してコンテキストを作成
-            context = browser.new_context(
-                accept_downloads=True
-            )
-            page = context.new_page()
+        for idx, data in enumerate(all_data, 1):
+            print(f"\n--- データ {idx}/{len(all_data)} の処理 ---")
+            print(f"  患者ID: {data['id']}, 名前: {data['name']}, 眼: {data['eye']}")
 
-            save_success = False
-            pdf_path = None
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=self.headless)
 
-            try:
-                # ログイン
-                print("[OK] Webサイトにログインしています...")
-                self.auth_service.login(page)
+                # ダウンロード先を指定してコンテキストを作成
+                context = browser.new_context(
+                    accept_downloads=True
+                )
+                page = context.new_page()
 
-                # 患者情報を入力
-                print("[OK] 患者情報を入力しています...")
-                self.patient_service.fill_patient_info(page, data)
+                save_success = False
+                pdf_path = None
 
-                # レンズ計算・注文モーダルを開く
-                print("[OK] レンズ計算・注文を開いています...")
-                self.lens_calculator_service.open_lens_calculator(page)
+                try:
+                    # ログイン
+                    print("[OK] Webサイトにログインしています...")
+                    self.auth_service.login(page)
 
-                # 眼別タブを選択
-                print(f"[OK] {data['eye']}タブを選択しています...")
-                self.lens_calculator_service.select_eye_tab(page, data['eye'])
+                    # 患者情報を入力
+                    print("[OK] 患者情報を入力しています...")
+                    self.patient_service.fill_patient_info(page, data)
 
-                # 誕生日を入力
-                print("[OK] 誕生日を入力しています...")
-                self.patient_service.fill_birthday(page, data['birthday'])
+                    # レンズ計算・注文モーダルを開く
+                    print("[OK] レンズ計算・注文を開いています...")
+                    self.lens_calculator_service.open_lens_calculator(page)
 
-                # 測定データを入力
-                print("[OK] 測定データを入力しています...")
-                self.lens_calculator_service.fill_measurement_data(page, data, data['eye'])
+                    # 眼別タブを選択
+                    print(f"[OK] {data['eye']}タブを選択しています...")
+                    self.lens_calculator_service.select_eye_tab(page, data['eye'])
 
-                # レンズタイプを選択
-                print("[OK] レンズタイプを選択しています...")
-                self.lens_calculator_service.select_lens_type(page, data, data['eye'])
+                    # 誕生日を入力
+                    print("[OK] 誕生日を入力しています...")
+                    self.patient_service.fill_birthday(page, data['birthday'])
 
-                # ATA/WTWデータを入力
-                print("[OK] ATA/WTWデータを入力しています...")
-                self.lens_calculator_service.fill_ata_wtw_data(page, data, data['eye'])
+                    # 測定データを入力
+                    print("[OK] 測定データを入力しています...")
+                    self.lens_calculator_service.fill_measurement_data(page, data, data['eye'])
 
-                # レンズ計算
-                print("[OK] レンズ計算を実行しています...")
-                self.lens_calculator_service.click_calculate_button(page)
+                    # レンズタイプを選択
+                    print("[OK] レンズタイプを選択しています...")
+                    self.lens_calculator_service.select_lens_type(page, data, data['eye'])
 
-                # PDF保存
-                print("[OK] PDFを保存しています...")
-                pdf_path = self.save_service.click_save_pdf_button(page, data['id'], data['name'])
+                    # ATA/WTWデータを入力
+                    print("[OK] ATA/WTWデータを入力しています...")
+                    self.lens_calculator_service.fill_ata_wtw_data(page, data, data['eye'])
 
-                # 入力を保存
-                print("[OK] 入力を保存しています...")
-                self.save_service.save_input(page)
+                    # レンズ計算
+                    print("[OK] レンズ計算を実行しています...")
+                    self.lens_calculator_service.click_calculate_button(page)
 
-                # 下書き保存
-                print("[OK] 下書き保存しています...")
-                save_success = self.save_service.save_draft(page)
+                    # PDF保存
+                    print("[OK] PDFを保存しています...")
+                    pdf_path = self.save_service.click_save_pdf_button(page, data['id'], data['name'])
 
-                if save_success:
-                    print("[OK] 注文の下書きが正常に保存されました")
-                    if pdf_path:
-                        print(f"[OK] PDF保存先: {pdf_path}")
-                else:
-                    print("[WARNING] ブラウザを開いたままにします。手動で確認してください。")
+                    # 入力を保存
+                    print("[OK] 入力を保存しています...")
+                    self.save_service.save_input(page)
 
-            except Exception as e:
-                print(f"[ERROR] エラーが発生しました: {e}")
-                raise
+                    # 下書き保存
+                    print("[OK] 下書き保存しています...")
+                    save_success = self.save_service.save_draft(page)
 
-            finally:
-                if save_success:
-                    page.wait_for_timeout(2000)
-                    browser.close()
+                    if save_success:
+                        print("[OK] 注文の下書きが正常に保存されました")
+                        if pdf_path:
+                            print(f"[OK] PDF保存先: {pdf_path}")
+                    else:
+                        print("[WARNING] ブラウザを開いたままにします。手動で確認してください。")
+                        all_success = False
 
-        if save_success:
+                except Exception as e:
+                    print(f"[ERROR] エラーが発生しました: {e}")
+                    all_success = False
+                    raise
+
+                finally:
+                    if save_success:
+                        page.wait_for_timeout(2000)
+                        browser.close()
+
+        if all_success:
             self.save_service.move_csv_to_calculated(csv_path)
 
         print(f"{'=' * 60}")
