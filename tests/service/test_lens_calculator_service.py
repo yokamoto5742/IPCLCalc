@@ -51,7 +51,7 @@ class TestLensCalculatorService:
         """レンズ計算・注文ボタンクリック後に待機することを確認"""
         LensCalculatorService.open_lens_calculator(mock_page)
 
-        mock_page.wait_for_timeout.assert_called_once_with(1000)
+        mock_page.wait_for_timeout.assert_called_once_with(500)
 
     def test_select_eye_tab_both_eyes(self, mock_page, mock_frame):
         """両眼タブを選択することを確認"""
@@ -227,7 +227,7 @@ class TestLensCalculatorService:
 
         mock_frame.locator.assert_called_once_with('button#btn-calculate')
         mock_frame.locator.return_value.click.assert_called_once()
-        mock_page.wait_for_timeout.assert_called_once_with(1000)
+        mock_page.wait_for_timeout.assert_called_once_with(500)
 
     @pytest.mark.parametrize("eye,expected_tab", [
         ('両眼', '両眼'),

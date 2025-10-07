@@ -66,7 +66,7 @@ class TestSaveService:
         # ファイルが保存されたことを確認
         mock_download.save_as.assert_called_once()
         assert result.startswith(str(pdf_dir))
-        assert "IPCLdata_ID_P12345" in result
+        assert "IPCLdata_IDP12345" in result
 
     def test_click_save_pdf_button_filename_format(self, save_service, mock_page, temp_dirs):
         """PDFファイル名のフォーマットが正しいことを確認"""
@@ -88,7 +88,7 @@ class TestSaveService:
             mock_datetime.now.return_value.strftime.return_value = '20240115_120000'
             result = save_service.click_save_pdf_button(mock_page, "TEST001", "テスト患者")
 
-        expected_filename = "IPCLdata_ID_TEST001_20240115_120000.pdf"
+        expected_filename = "IPCLdata_IDTEST001_20240115_120000.pdf"
         assert expected_filename in result
 
     def test_click_save_pdf_button_raises_exception_on_error(self, save_service, mock_page):
@@ -121,7 +121,7 @@ class TestSaveService:
 
         SaveService.save_input(mock_page)
 
-        mock_page.wait_for_timeout.assert_called_once_with(1000)
+        mock_page.wait_for_timeout.assert_called_once_with(500)
 
     def test_save_draft_returns_true_on_success(self, mock_page):
         """下書き保存が成功した場合にTrueを返すことを確認"""
@@ -153,7 +153,7 @@ class TestSaveService:
 
         SaveService.save_draft(mock_page)
 
-        mock_button.wait_for.assert_called_once_with(state='visible', timeout=5000)
+        mock_button.wait_for.assert_called_once_with(state='visible', timeout=2000)
 
     def test_save_draft_waits_before_clicking(self, mock_page):
         """下書き保存ボタンクリック前に待機することを確認"""
@@ -163,7 +163,7 @@ class TestSaveService:
 
         SaveService.save_draft(mock_page)
 
-        mock_page.wait_for_timeout.assert_called_with(2000)
+        mock_page.wait_for_timeout.assert_called_with(1000)
 
     def test_save_draft_returns_false_on_exception(self, mock_page):
         """例外発生時にFalseを返すことを確認"""
@@ -239,4 +239,4 @@ class TestSaveService:
 
         result = save_service.click_save_pdf_button(mock_page, "P001", "患者・名前（テスト）")
 
-        assert "IPCLdata_ID_P001" in result
+        assert "IPCLdata_IDP001" in result
