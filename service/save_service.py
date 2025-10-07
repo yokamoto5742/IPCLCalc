@@ -22,7 +22,7 @@ class SaveService:
             download = download_info.value
 
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            pdf_filename = f"IPCLdata_ID_{patient_id}_{timestamp}.pdf"
+            pdf_filename = f"IPCLdata_ID{patient_id}_{timestamp}.pdf"
             pdf_path = self.pdf_dir / pdf_filename
 
             download.save_as(pdf_path)
