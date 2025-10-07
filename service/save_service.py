@@ -21,16 +21,10 @@ class SaveService:
 
             download = download_info.value
 
-            # デバッグ情報を表示
-            print(f"[DEBUG] 一時ファイル: {download.path()}")
-            print(f"[DEBUG] 推奨ファイル名: {download.suggested_filename}")
-
-            # ファイル名を生成（患者IDと患者名を含む）
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            pdf_filename = f"IPCL_{patient_id}_{patient_name}_{timestamp}.pdf"
+            pdf_filename = f"IPCLdata_ID_{patient_id}_{timestamp}.pdf"
             pdf_path = self.pdf_dir / pdf_filename
 
-            # ダウンロードしたファイルを指定先に保存
             download.save_as(pdf_path)
 
             print(f"[OK] PDFを保存しました: {pdf_path}")
