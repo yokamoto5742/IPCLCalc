@@ -6,7 +6,7 @@ class PatientService:
     def fill_patient_info(page: Page, data: dict):
         """患者情報を入力"""
         page.wait_for_load_state('domcontentloaded')
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(1000)
 
         page.get_by_label("患者ID").fill(data['id'])
 

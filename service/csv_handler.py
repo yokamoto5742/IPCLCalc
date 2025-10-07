@@ -5,8 +5,6 @@ from pathlib import Path
 class CSVHandler:
     @staticmethod
     def read_csv_file(csv_path: Path) -> list[dict]:
-        """CSVファイルからすべての行のデータを読み込む"""
-        # cp932, utf-8の順で試行
         all_data = []
         for encoding in ['cp932', 'utf-8']:
             try:

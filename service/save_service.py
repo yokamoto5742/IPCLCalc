@@ -39,15 +39,15 @@ class SaveService:
         """入力を保存"""
         frame = page.frame_locator('#calculatorFrame')
         frame.locator('button#btn-save-draft-modal').click()
-        page.wait_for_timeout(1000)
+        page.wait_for_timeout(500)
 
     @staticmethod
     def save_draft(page: Page) -> bool:
         """下書きを保存"""
         try:
             save_button = page.locator('button:has-text("下書き保存")')
-            save_button.wait_for(state='visible', timeout=5000)
-            page.wait_for_timeout(2000)
+            save_button.wait_for(state='visible', timeout=2000)
+            page.wait_for_timeout(1000)
 
             if not save_button.is_disabled():
                 save_button.click()

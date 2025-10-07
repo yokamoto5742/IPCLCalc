@@ -8,7 +8,6 @@ class AuthService:
         self.password = password
 
     def login(self, page: Page):
-        """ログイン処理"""
         page.goto(self.base_url)
         page.wait_for_load_state('networkidle')
 
