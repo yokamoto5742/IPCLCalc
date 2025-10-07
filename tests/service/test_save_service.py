@@ -66,7 +66,7 @@ class TestSaveService:
         # ファイルが保存されたことを確認
         mock_download.save_as.assert_called_once()
         assert result.startswith(str(pdf_dir))
-        assert "IPCL_P12345_山田太郎" in result
+        assert "IPCLdata_ID_P12345" in result
 
     def test_click_save_pdf_button_filename_format(self, save_service, mock_page, temp_dirs):
         """PDFファイル名のフォーマットが正しいことを確認"""
@@ -88,7 +88,7 @@ class TestSaveService:
             mock_datetime.now.return_value.strftime.return_value = '20240115_120000'
             result = save_service.click_save_pdf_button(mock_page, "TEST001", "テスト患者")
 
-        expected_filename = "IPCL_TEST001_テスト患者_20240115_120000.pdf"
+        expected_filename = "IPCLdata_ID_TEST001_20240115_120000.pdf"
         assert expected_filename in result
 
     def test_click_save_pdf_button_raises_exception_on_error(self, save_service, mock_page):
@@ -239,4 +239,4 @@ class TestSaveService:
 
         result = save_service.click_save_pdf_button(mock_page, "P001", "患者・名前（テスト）")
 
-        assert "IPCL_P001_患者・名前（テスト）" in result
+        assert "IPCLdata_ID_P001" in result

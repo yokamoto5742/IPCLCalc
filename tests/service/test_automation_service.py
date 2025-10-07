@@ -111,9 +111,9 @@ class TestIPCLOrderAutomation:
         """進捗ウィンドウが作成されることを確認"""
         mock_load_config.return_value = mock_config
 
-        with patch('service.automation_service.tk.Tk') as mock_tk:
-            with patch('service.automation_service.tk.Toplevel') as mock_toplevel:
-                with patch('service.automation_service.tk.Label') as mock_label:
+        with patch('widgets.progress_window.tk.Tk') as mock_tk:
+            with patch('widgets.progress_window.tk.Toplevel') as mock_toplevel:
+                with patch('widgets.progress_window.tk.Label') as mock_label:
                     mock_root = Mock()
                     mock_tk.return_value = mock_root
                     mock_window = Mock()
@@ -127,12 +127,12 @@ class TestIPCLOrderAutomation:
                     mock_label.return_value = mock_label_instance
 
                     automation = IPCLOrderAutomation()
-                    automation.create_progress_window()
+                    automation.progress_window.create()
 
                     mock_tk.assert_called_once()
                     mock_root.withdraw.assert_called_once()
-                    assert automation.root is not None
-                    assert automation.progress_window is not None
+                    assert automation.progress_window.root is not None
+                    assert automation.progress_window.progress_window is not None
 
     @patch('service.automation_service.Path.mkdir')
     @patch('service.automation_service.load_environment_variables')
@@ -143,13 +143,13 @@ class TestIPCLOrderAutomation:
         mock_load_config.return_value = mock_config
 
         automation = IPCLOrderAutomation()
-        automation.progress_label = Mock()
-        automation.progress_window = Mock()
+        automation.progress_window.progress_label = Mock()
+        automation.progress_window.progress_window = Mock()
 
-        automation.update_progress("テストメッセージ")
+        automation.progress_window.update("テストメッセージ")
 
-        automation.progress_label.config.assert_called_once_with(text="テストメッセージ")
-        automation.progress_window.update.assert_called_once()
+        automation.progress_window.progress_label.config.assert_called_once_with(text="テストメッセージ")
+        automation.progress_window.progress_window.update.assert_called_once()
 
     @patch('service.automation_service.Path.mkdir')
     @patch('service.automation_service.load_environment_variables')
@@ -160,13 +160,13 @@ class TestIPCLOrderAutomation:
         mock_load_config.return_value = mock_config
 
         automation = IPCLOrderAutomation()
-        automation.progress_window = Mock()
-        automation.root = Mock()
+        automation.progress_window.progress_window = Mock()
+        automation.progress_window.root = Mock()
 
-        automation.close_progress_window()
+        automation.progress_window.close()
 
-        automation.progress_window.destroy.assert_called_once()
-        automation.root.destroy.assert_called_once()
+        automation.progress_window.progress_window.destroy.assert_called_once()
+        automation.progress_window.root.destroy.assert_called_once()
 
     @patch('service.automation_service.Path.mkdir')
     @patch('service.automation_service.load_environment_variables')
@@ -177,11 +177,11 @@ class TestIPCLOrderAutomation:
         mock_load_config.return_value = mock_config
 
         automation = IPCLOrderAutomation()
-        automation.progress_window = None
-        automation.root = None
+        automation.progress_window.progress_window = None
+        automation.progress_window.root = None
 
         # エラーが発生しないことを確認
-        automation.close_progress_window()
+        automation.progress_window.close()
 
     @patch('service.automation_service.Path.mkdir')
     @patch('service.automation_service.load_environment_variables')
