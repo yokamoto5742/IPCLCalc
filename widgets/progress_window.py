@@ -1,5 +1,7 @@
 import tkinter as tk
 
+from utils.config_manager import load_config
+
 
 class ProgressWindow:
     def __init__(self):
@@ -7,13 +9,19 @@ class ProgressWindow:
         self.progress_window = None
         self.progress_label = None
 
+        # 設定の読み込み
+        config = load_config()
+        self.font_size = config.getint('Appearance', 'font_size', fallback=11)
+        self.window_width = config.getint('Appearance', 'window_width', fallback=500)
+        self.window_height = config.getint('Appearance', 'window_height', fallback=150)
+
     def create(self):
         self.root = tk.Tk()
         self.root.withdraw()
 
         self.progress_window = tk.Toplevel(self.root)
         self.progress_window.title("進行状況")
-        self.progress_window.geometry("500x150")
+        self.progress_window.geometry(f"{self.window_width}x{self.window_height}")
         self.progress_window.resizable(False, False)
 
         # ウィンドウを中央に配置
@@ -27,8 +35,8 @@ class ProgressWindow:
         self.progress_label = tk.Label(
             self.progress_window,
             text="処理を開始します...",
-            font=("MS Gothic", 11),
-            wraplength=450,
+            font=("MS Gothic", self.font_size),
+            wraplength=self.window_width - 50,
             justify=tk.LEFT,
             padx=20,
             pady=20
