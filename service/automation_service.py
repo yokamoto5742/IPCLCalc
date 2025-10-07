@@ -15,7 +15,6 @@ from utils.config_manager import load_config, load_environment_variables
 
 class IPCLOrderAutomation:
     def __init__(self):
-        # 進捗ウィンドウの初期化
         self.root = None
         self.progress_window = None
         self.progress_label = None
@@ -42,12 +41,10 @@ class IPCLOrderAutomation:
         self.log_dir = Path(config.get('Paths', 'log_dir'))
         self.headless = config.getboolean('Settings', 'headless')
 
-        # PDFダウンロード先ディレクトリを設定
         self.pdf_dir = self.csv_dir / 'pdf'
         self.pdf_dir.mkdir(exist_ok=True)
         print(f"[OK] PDFダウンロード先: {self.pdf_dir}")
 
-        # サービスの初期化
         self.auth_service = AuthService(self.base_url, self.email, self.password)
         self.csv_handler = CSVHandler()
         self.patient_service = PatientService()
@@ -55,12 +52,11 @@ class IPCLOrderAutomation:
         self.save_service = SaveService(self.pdf_dir, self.calculated_dir)
 
     def create_progress_window(self):
-        """進捗ウィンドウを作成"""
         self.root = tk.Tk()
         self.root.withdraw()
         
         self.progress_window = tk.Toplevel(self.root)
-        self.progress_window.title("処理進捗")
+        self.progress_window.title("進行状況")
         self.progress_window.geometry("500x150")
         self.progress_window.resizable(False, False)
         
@@ -71,8 +67,7 @@ class IPCLOrderAutomation:
         x = (self.progress_window.winfo_screenwidth() // 2) - (width // 2)
         y = (self.progress_window.winfo_screenheight() // 2) - (height // 2)
         self.progress_window.geometry(f"{width}x{height}+{x}+{y}")
-        
-        # ラベルを作成
+
         self.progress_label = tk.Label(
             self.progress_window,
             text="処理を開始します...",
@@ -87,21 +82,17 @@ class IPCLOrderAutomation:
         self.progress_window.update()
 
     def update_progress(self, message: str):
-        """進捗メッセージを更新"""
-        print(message)  # コンソールにも出力
         if self.progress_label:
             self.progress_label.config(text=message)
             self.progress_window.update()
 
     def close_progress_window(self):
-        """進捗ウィンドウを閉じる"""
         if self.progress_window:
             self.progress_window.destroy()
         if self.root:
             self.root.destroy()
 
     def process_csv_file(self, csv_path: Path):
-        """CSVファイルを処理"""
         print(f"\n{'=' * 60}")
         print(f"処理開始: {csv_path.name}")
         print(f"{'=' * 60}")
@@ -120,7 +111,6 @@ class IPCLOrderAutomation:
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=self.headless)
 
-                # ダウンロード先を指定してコンテキストを作成
                 context = browser.new_context(
                     accept_downloads=True
                 )
@@ -142,7 +132,7 @@ class IPCLOrderAutomation:
                     self.update_progress(f"[{idx}/{len(all_data)}] レンズ計算・注文を開いています...")
                     self.lens_calculator_service.open_lens_calculator(page)
 
-                    # 眼別タブを選択
+                    # 眼のタブを選択
                     self.update_progress(f"[{idx}/{len(all_data)}] {data['eye']}タブを選択中...")
                     self.lens_calculator_service.select_eye_tab(page, data['eye'])
 
@@ -179,7 +169,7 @@ class IPCLOrderAutomation:
                     save_success = self.save_service.save_draft(page)
 
                     if save_success:
-                        self.update_progress(f"[{idx}/{len(all_data)}] 注文の下書きが正常に保存されました")
+                        self.update_progress(f"[{idx}/{len(all_data)}] 注文の下書きが保存されました")
                         if pdf_path:
                             print(f"[OK] PDF保存先: {pdf_path}")
                     else:
@@ -206,14 +196,12 @@ class IPCLOrderAutomation:
         print(f"{'=' * 60}\n")
 
     def process_all_csv_files(self):
-        """すべてのCSVファイルを処理"""
         csv_files = list(self.csv_dir.glob('IPCLdata_*.csv'))
 
         if not csv_files:
             print("処理するCSVファイルが見つかりませんでした")
             return
 
-        # 進捗ウィンドウを作成
         self.create_progress_window()
 
         try:
@@ -230,6 +218,5 @@ class IPCLOrderAutomation:
             self.update_progress(f"すべてのファイルの処理が完了しました\n\nPDFの保存先:\n{self.pdf_dir}")
         
         finally:
-            # 3秒後にウィンドウを閉じる
             if self.progress_window:
-                self.progress_window.after(3000, self.close_progress_window)
+                self.progress_window.after(1000, self.close_progress_window)
