@@ -7,13 +7,6 @@ from scripts.version_manager import update_version
 
 
 def get_playwright_browsers_path():
-    """Playwrightのブラウザインストールパスを取得"""
-    # 環境変数をチェック
-    env_path = os.environ.get('PLAYWRIGHT_BROWSERS_PATH')
-    if env_path and os.path.exists(env_path):
-        return env_path
-
-    # Windowsのデフォルトパス
     default_path = Path.home() / 'AppData' / 'Local' / 'ms-playwright'
     if default_path.exists():
         return str(default_path)
@@ -23,7 +16,6 @@ def get_playwright_browsers_path():
 
 
 def build_executable():
-    """実行ファイルをビルド"""
     new_version = update_version()
 
     playwright_browsers_path = get_playwright_browsers_path()
@@ -69,10 +61,6 @@ def build_executable():
 
 
 if __name__ == "__main__":
-    print("=" * 60)
-    print("IPCLCalc 実行ファイルビルドスクリプト")
-    print("=" * 60)
-    print()
 
     try:
         subprocess.run(
