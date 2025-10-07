@@ -5,12 +5,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## House Rules:
 - 文章ではなくパッチの差分を返す。Return patch diffs, not prose.
 - 変更範囲は最小限に抑える。
-- コードの変更は直接適用する。
+- コードの修正は直接適用する。
 - Pythonコードのimport文は以下の適切な順序に並べ替えてください。
 標準ライブラリ
 サードパーティライブラリ
 カスタムモジュール 
 それぞれアルファベット順に並べます。importが先でfromは後です。
+
+# CHANGELOG
+
+このプロジェクトにおけるすべての重要な変更は日本語でCHANGELOG.mdに記録されます。フォーマットは[Keep a Changelog](https://keepachangelog.com/ja/1.1.0/)に基づいています。
 
 ## Automatic Notifications (Hooks)
 自動通知は`.claude/settings.local.json` で設定済：
