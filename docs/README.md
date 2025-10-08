@@ -1,9 +1,9 @@
-# IPCLCalc - IPCL注文システム自動化ツール
+# IPCLCalc
 
 **現在のバージョン**: 1.0.1
 **最終更新日**: 2025年10月7日
 
-IPCLCalcは、IPCL注文システムへの患者データ入力を自動化するPythonアプリケーションです。CSVファイルから患者の測定データを読み込み、Webブラウザを自動操作してIPCL注文システムに入力、レンズ計算を実行し、PDF形式で結果を保存します。
+IPCLCalcは、IPCL注文システムへの患者データ入力を自動化するPythonアプリケーションです。CSVファイルから患者データを読み込み、Webブラウザを自動操作してIPCL注文システムに入力、レンズ計算を実行し、PDF形式で計算結果を保存します。
 
 ## 目次
 
@@ -30,7 +30,6 @@ IPCLCalcは、IPCL注文システムへの患者データ入力を自動化す�
 - **レンズ計算の自動実行**: 入力データに基づくレンズ計算の実行
 - **PDF自動保存**: 計算結果をPDF形式で自動保存（タイムスタンプ付き）
 - **下書き自動保存**: 注文データの下書き保存
-- **処理済みファイルの自動整理**: 処理完了したCSVファイルを自動的にcalculatedフォルダに移動
 
 ### ユーザーインターフェース
 - **進捗表示ウィンドウ**: リアルタイムで処理状況を表示するTkinterベースのGUI
@@ -44,7 +43,7 @@ IPCLCalcは、IPCL注文システムへの患者データ入力を自動化す�
 ## 対象ユーザー
 - **眼科医療従事者**: IPCL（眼内コンタクトレンズ）の注文業務を行う眼科医療従事者
 
-## 背景と解決する問題
+## プロダクト開発の背景と解決する問題
 
 ### 課題
 IPCL注文システムへの患者データ入力は、多数の測定値を手動で入力する必要があり、以下の問題がありました：
@@ -64,31 +63,13 @@ IPCLCalcは、CSVファイルから患者データを読み込み、Webブラウ
 
 ### 必要な開発環境
 - **OS**: Windows 11（Windows 10でも動作可能）
-- **Python**: 3.8以上（推奨: 3.11以降）
+- **Python**: 3.11以降を推奨
 - **Webブラウザ**: Google Chrome（最新版推奨）
 
 ### ハードウェア要件
 - **メモリ**: 4GB以上推奨（ブラウザ自動操作のため）
 - **ストレージ**: 500MB以上の空き容量
 - **ネットワーク**: インターネット接続必須（IPCL注文システムへのアクセスに必要）
-
-### 依存関係とライブラリ
-
-主要な依存パッケージ（requirements.txtより）：
-
-```
-playwright==1.55.0          # Webブラウザ自動操作
-python-dotenv==1.1.1        # 環境変数管理
-pytest==8.4.2               # テストフレームワーク
-pytest-cov==7.0.0           # カバレッジ測定
-pyinstaller==6.16.0         # 実行ファイル作成
-Pygments==2.19.2            # シンタックスハイライト
-```
-
-その他の依存パッケージ：
-- `colorama`: コンソール出力の色付け
-- `packaging`: パッケージバージョン管理
-- `greenlet`: 非同期処理サポート
 
 ## インストール手順
 
@@ -170,10 +151,10 @@ C:\Shinseikai\IPCLCalc\
 
 #### ファイル名の規則
 ```
-IPCLdata_ID{患者ID}.csv
+IPCLdata_ID{患者ID}_yymmddHHmm.csv
 ```
 
-例：`IPCLdata_ID12345.csv`
+例：`IPCLdata_ID12345_2510031122.csv`
 
 #### CSVファイルの形式
 
@@ -197,7 +178,7 @@ IPCLdata_ID{患者ID}.csv
 - `R_K1(Kf)`: 最大角膜屈折力
 - `R_K1Axis`: K1の軸
 - `R_K2(Kf)`: 最小角膜屈折力
-- `R_SIA`: 手術誘発乱視
+- `R_SIA`: 手術惹起乱視
 - `R_Ins`: 切開位置
 
 **左眼の測定データ**
@@ -433,7 +414,7 @@ IPCL注文システムへのログイン処理を実行します。
 - 角膜水晶体距離（CLR）
 - 角膜屈折力（K1、K2）
 - K1の軸（K1 Axis）
-- 手術誘発乱視（SIA）
+- 手術惹起乱視（SIA）
 - 切開位置（Ins）
 
 #### select_lens_type(page: Page, data: dict, eye: str)
@@ -550,8 +531,8 @@ headless = True             # ヘッドレスモード（True: ブラウザ非�
 
 #### [URL]
 ```ini
-base_url = https://www.ipcl-jp.com/awsystem/order/create    # 注文作成ページURL
-draft_url = https://www.ipcl-jp.com/awsystem/order/drafts   # 下書き一覧ページURL
+base_url = https://www.ipcl-jp.com/awsystem/order/create    # 注文作成ページ
+draft_url = https://www.ipcl-jp.com/awsystem/order/drafts   # 注文下書き一覧ページ
 ```
 
 ### .env
@@ -623,7 +604,7 @@ python build.py
 from scripts.version_manager import update_version
 
 # パッチバージョンをインクリメント（例: 1.0.0 → 1.0.1）
-new_version = update_version("patch")
+new_version = update_version()
 ```
 
 ### コーディング規約
@@ -632,26 +613,6 @@ new_version = update_version("patch")
 - ファイル名: スネークケース（例: `automation_service.py`）
 - クラス名: パスカルケース（例: `IPCLOrderAutomation`）
 - 関数名: スネークケース（例: `process_csv_file`）
-
-#### インポート順序
-1. 標準ライブラリ
-2. サードパーティライブラリ
-3. カスタムモジュール
-
-各グループ内はアルファベット順。`import`文が先、`from`文が後。
-
-#### 例
-```python
-import os
-import sys
-from pathlib import Path
-
-from playwright.sync_api import sync_playwright
-from dotenv import load_dotenv
-
-from service.auth_service import AuthService
-from utils.config_manager import load_config
-```
 
 ### プロジェクト構造の出力
 
@@ -770,7 +731,6 @@ playwright install --force chromium
 **解決方法**:
 - 各ファイルの処理後にブラウザが正しく閉じられているか確認
 - CSVファイルのフォーマットが統一されているか確認
-- メモリ不足の可能性がある場合、一度に処理するファイル数を減らす
 
 ### デバッグモード
 
@@ -817,10 +777,6 @@ logs/
 
 問題が発生した場合や機能追加の要望がある場合は、GitHubのIssuesページをご利用ください。
 
-### 貢献
-
-プルリクエストを歓迎します。大きな変更の場合は、まずIssueを開いて変更内容を議論してください。
-
 ---
 
-**IPCLCalc** - IPCL注文業務を効率化し、医療従事者の負担を軽減します。
+**IPCLCalc** - IPCL注文業務を効率化し、眼科医療従事者の負担を軽減します。
