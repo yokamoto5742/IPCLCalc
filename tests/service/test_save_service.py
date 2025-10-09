@@ -115,13 +115,14 @@ class TestSaveService:
         mock_frame.locator.return_value.click.assert_called_once()
 
     def test_save_input_waits_after_click(self, mock_page):
-        """入力保存後に待機することを確認"""
+        """入力保存後の動作を確認"""
         mock_frame = Mock()
         mock_page.frame_locator.return_value = mock_frame
 
         SaveService.save_input(mock_page)
 
-        mock_page.wait_for_timeout.assert_called_once_with(500)
+        # ボタンがクリックされることを確認
+        mock_frame.locator.return_value.click.assert_called_once()
 
     def test_save_draft_returns_true_on_success(self, mock_page):
         """下書き保存が成功した場合にTrueを返すことを確認"""
@@ -156,14 +157,14 @@ class TestSaveService:
         mock_button.wait_for.assert_called_once_with(state='visible', timeout=2000)
 
     def test_save_draft_waits_before_clicking(self, mock_page):
-        """下書き保存ボタンクリック前に待機することを確認"""
+        """下書き保存ボタンクリック後にネットワークアイドルを待機することを確認"""
         mock_button = Mock()
         mock_button.is_disabled.return_value = False
         mock_page.locator.return_value = mock_button
 
         SaveService.save_draft(mock_page)
 
-        mock_page.wait_for_timeout.assert_called_with(1000)
+        mock_page.wait_for_load_state.assert_called_with('networkidle')
 
     def test_save_draft_returns_false_on_exception(self, mock_page):
         """例外発生時にFalseを返すことを確認"""

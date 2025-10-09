@@ -1,7 +1,7 @@
 ============================================================
 プロジェクト構造: IPCLCalc
 パス: C:\Users\yokam\PycharmProjects\IPCLCalc
-生成日時: 2025-10-07 15:46:22
+生成日時: 2025-10-09 15:24:19
 ============================================================
 
 └── IPCLCalc
@@ -16,6 +16,7 @@
     ├── assets
     │   └── IPCLCalc.ico
     ├── docs
+    │   ├── CHANGELOG.md
     │   ├── LICENSE
     │   └── README.md
     ├── logs
@@ -27,10 +28,12 @@
     │   ├── __init__.py
     │   ├── auth_service.py
     │   ├── automation_service.py
+    │   ├── browser_manager.py
     │   ├── csv_handler.py
     │   ├── draft_launch.py
     │   ├── lens_calculator_service.py
     │   ├── patient_service.py
+    │   ├── patient_workflow_executor.py
     │   └── save_service.py
     ├── utils
     │   ├── config.ini
@@ -38,7 +41,8 @@
     │   ├── constants.py
     │   └── log_rotation.py
     ├── widgets
-    │   └── __init__.py
+    │   ├── __init__.py
+    │   └── progress_window.py
     ├── requirements.txt
     ├── CLAUDE.md
     └── main.py

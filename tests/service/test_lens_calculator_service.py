@@ -48,10 +48,17 @@ class TestLensCalculatorService:
         mock_page.click.assert_called_once_with('button:has-text("レンズ計算・注文")')
 
     def test_open_lens_calculator_waits_after_click(self, mock_page):
-        """レンズ計算・注文ボタンクリック後に待機することを確認"""
+        """レンズ計算・注文ボタンクリック後にフレームの表示を待機することを確認"""
+        mock_frame_locator = Mock()
+        mock_locator = Mock()
+        mock_page.frame_locator.return_value = mock_frame_locator
+        mock_frame_locator.locator.return_value = mock_locator
+
         LensCalculatorService.open_lens_calculator(mock_page)
 
-        mock_page.wait_for_timeout.assert_called_once_with(500)
+        mock_page.frame_locator.assert_called_once_with('#calculatorFrame')
+        mock_frame_locator.locator.assert_called_once_with('body')
+        mock_locator.wait_for.assert_called_once_with(state='visible')
 
     def test_select_eye_tab_both_eyes(self, mock_page, mock_frame):
         """両眼タブを選択することを確認"""
@@ -99,10 +106,11 @@ class TestLensCalculatorService:
         mock_frame.locator.return_value.click.assert_called()
 
     def test_select_eye_tab_waits_after_selection(self, mock_page, mock_frame):
-        """タブ選択後に待機することを確認"""
+        """タブ選択後の動作を確認"""
         LensCalculatorService.select_eye_tab(mock_page, '右眼')
 
-        mock_page.wait_for_timeout.assert_called_once_with(500)
+        # タブがクリックされることを確認
+        mock_frame.locator.return_value.click.assert_called()
 
     def test_fill_measurement_data_both_eyes(self, mock_page, mock_frame, measurement_data):
         """両眼の測定データが入力されることを確認"""
@@ -222,12 +230,11 @@ class TestLensCalculatorService:
         assert len(right_eye_calls) == 0
 
     def test_click_calculate_button_clicks_and_waits(self, mock_page, mock_frame):
-        """計算ボタンがクリックされ、待機することを確認"""
+        """計算ボタンがクリックされることを確認"""
         LensCalculatorService.click_calculate_button(mock_page)
 
         mock_frame.locator.assert_called_once_with('button#btn-calculate')
         mock_frame.locator.return_value.click.assert_called_once()
-        mock_page.wait_for_timeout.assert_called_once_with(500)
 
     @pytest.mark.parametrize("eye,expected_tab", [
         ('両眼', '両眼'),

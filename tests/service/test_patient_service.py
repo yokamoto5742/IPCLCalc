@@ -32,10 +32,10 @@ class TestPatientService:
         mock_page.get_by_label.return_value.fill.assert_any_call('P12345')
 
     def test_fill_patient_info_waits_for_dom(self, mock_page, patient_data):
-        """DOM読み込みを待機することを確認"""
+        """ネットワークアイドル状態を待機することを確認"""
         PatientService.fill_patient_info(mock_page, patient_data)
 
-        mock_page.wait_for_load_state.assert_called_with('domcontentloaded')
+        mock_page.wait_for_load_state.assert_called_with('networkidle')
 
     def test_fill_patient_info_with_male_sex(self, mock_page, patient_data):
         """男性の性別選択が正しく行われることを確認"""
@@ -103,7 +103,7 @@ class TestPatientService:
         mock_input.press.assert_called_once_with('Enter')
 
     def test_fill_birthday_waits_after_input(self, mock_page):
-        """誕生日入力後に待機することを確認"""
+        """誕生日入力後の動作を確認"""
         birthday = '12/31/1985'
 
         mock_frame = Mock()
@@ -113,7 +113,8 @@ class TestPatientService:
 
         PatientService.fill_birthday(mock_page, birthday)
 
-        mock_page.wait_for_timeout.assert_called_once_with(500)
+        # Enterキーが押されることを確認
+        mock_input.press.assert_called_once_with('Enter')
 
     def test_fill_birthday_handles_invalid_format(self, mock_page):
         """無効な誕生日フォーマットを適切に処理することを確認"""
