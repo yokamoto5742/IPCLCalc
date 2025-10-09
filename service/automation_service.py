@@ -139,12 +139,11 @@ class IPCLOrderAutomation:
                     logger.exception(error_msg)
                     self.progress_window.update(f"[ERROR] {error_msg}")
                     all_success = False
-                    raise
 
                 finally:
-                    if save_success:
-                        page.wait_for_timeout(2000)
-                        browser.close()
+                    # リソースは常にクリーンアップ
+                    page.wait_for_timeout(2000)
+                    browser.close()
 
         if all_success:
             self.save_service.move_csv_to_calculated(csv_path)
