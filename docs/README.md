@@ -279,10 +279,12 @@ IPCLCalc/
 │   ├── __init__.py
 │   ├── auth_service.py         # 認証サービス（ログイン処理）
 │   ├── automation_service.py   # 自動化メインサービス
+│   ├── browser_manager.py      # ブラウザ処理管理
 │   ├── csv_handler.py          # CSVファイル読み込み
 │   ├── draft_launch.py         # 下書きページ起動
 │   ├── lens_calculator_service.py  # レンズ計算処理
 │   ├── patient_service.py      # 患者情報入力処理
+│   ├── patient_workflow_executor.py  # 患者ワークフロー実行
 │   └── save_service.py         # 保存処理（PDF、下書き、CSV移動）
 │
 ├── utils/                       # ユーティリティ
@@ -317,10 +319,21 @@ IPCLCalc/
 #### service/automation_service.py
 自動化処理の中核。以下の機能を提供：
 - 設定ファイルと環境変数の読み込み
-- Playwrightブラウザの起動と管理
 - CSVファイルごとの処理フロー制御
 - 進捗表示ウィンドウの管理
 - エラーハンドリング
+
+#### service/browser_manager.py
+Playwrightブラウザのライフサイクル管理：
+- ブラウザインスタンスの作成
+- ブラウザコンテキストの作成
+- 実行環境に応じたブラウザパス設定（PyInstaller対応）
+
+#### service/patient_workflow_executor.py
+患者データ処理ワークフロー全体を統合：
+- 各サービスを組み合わせて患者データ処理を実行
+- ログイン→患者情報入力→測定データ入力→計算→保存の一連の流れを管理
+- 進捗表示の更新
 
 #### service/csv_handler.py
 CSVファイルの読み込みと解析：
@@ -348,6 +361,55 @@ Tkinterベースの進捗表示ウィンドウ：
 - カスタマイズ可能なウィンドウサイズとフォント
 
 ## 機能説明
+
+### ブラウザ管理（BrowserManager）
+
+#### __init__(headless: bool = True)
+ブラウザマネージャーを初期化します。
+
+**パラメータ**:
+- `headless`: ヘッドレスモード（True: ブラウザ非表示、False: ブラウザ表示）
+
+**処理内容**:
+- PyInstaller実行環境の検出と対応
+- Playwrightブラウザパスの自動設定
+
+#### create_browser(playwright: Playwright) -> Browser
+ブラウザインスタンスを作成します。
+
+#### create_context(browser: Browser) -> BrowserContext
+ダウンロードを許可するブラウザコンテキストを作成します。
+
+#### create_page(context: BrowserContext) -> Page
+新しいページを作成します。
+
+### ワークフロー実行（PatientWorkflowExecutor）
+
+#### execute(page: Page, idx: int, total: int, data: dict) -> tuple[bool, Path | None]
+患者データ処理の完全なワークフローを実行します。
+
+**パラメータ**:
+- `page`: Playwrightのページオブジェクト
+- `idx`: 現在の処理インデックス
+- `total`: 総処理件数
+- `data`: 患者データの辞書
+
+**戻り値**:
+- `(save_success, pdf_path)`: 保存成功フラグとPDFファイルパス
+
+**実行フロー**:
+1. ログイン
+2. 患者情報入力
+3. レンズ計算・注文モーダルを開く
+4. 眼のタブ選択(両眼、右眼、左眼)
+5. 誕生日入力
+6. 測定データ入力
+7. レンズタイプ選択
+8. ATA/WTWデータ入力
+9. レンズ計算実行
+10. 計算結果をPDFに保存
+11. 入力したデータを保存
+12. 下書き保存
 
 ### 認証機能（AuthService）
 
@@ -761,13 +823,6 @@ logs/
 このプロジェクトは**Apache License 2.0**の下でライセンスされています。
 
 詳細については、[LICENSE](LICENSE)ファイルを参照してください。
-
-### サードパーティライセンス
-
-このプロジェクトは以下のオープンソースライブラリを使用しています：
-- Playwright: Apache License 2.0
-- Python-dotenv: BSD License
-- Pytest: MIT License
 
 ---
 
