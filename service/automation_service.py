@@ -18,8 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 class IPCLOrderAutomation:
-    """CSVファイルからIPCL注文を自動処理するメインオーケストレーター"""
-
     def __init__(self):
         load_environment_variables()
         config = load_config()
@@ -31,13 +29,11 @@ class IPCLOrderAutomation:
         self.pdf_dir.mkdir(exist_ok=True)
         logger.info(f"PDFダウンロード先: {self.pdf_dir}")
 
-        # 認証情報
         base_url = config.get('URL', 'base_url')
         email = os.getenv('EMAIL')
         password = os.getenv('PASSWORD')
         headless = config.getboolean('Settings', 'headless')
 
-        # サービス初期化
         self.progress_window = ProgressWindow()
         self.csv_handler = CSVHandler()
         self.browser_manager = BrowserManager(headless)
@@ -57,14 +53,12 @@ class IPCLOrderAutomation:
         self.save_service = save_service
 
     def _read_csv_data(self, csv_path: Path) -> list[dict]:
-        """CSVファイルを読み込む"""
         self.progress_window.update(f"CSVファイルを読み込み中...\n{csv_path.name}")
         all_data = self.csv_handler.read_csv_file(csv_path)
         self.progress_window.update(f"{len(all_data)}件のデータを読み込みました")
         return all_data
 
     def _process_single_record(self, idx: int, total: int, data: dict) -> bool:
-        """単一レコードを処理"""
         logger.info(f"[{idx}/{total}件目を処理中…]")
         logger.info(f"  患者ID: {data['id']}, 名前: {data['name']}, 眼: {data['eye']}")
         self.progress_window.update(

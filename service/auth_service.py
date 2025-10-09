@@ -32,8 +32,8 @@ class AuthService:
 
     def _fill_password(self, page: Page):
         selectors = [
-            '#login-form-password',  # id属性
-            'input[name="login-form[password]"]',  # name属性
+            '#login-form-password',
+            'input[name="login-form[password]"]',
         ]
 
         for selector in selectors:

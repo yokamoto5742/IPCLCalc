@@ -15,14 +15,12 @@ def main():
     setup_logging(log_directory=log_directory, log_retention_days=log_retention_days)
 
     logger = logging.getLogger(__name__)
-    logger.info("IPCLCalc アプリケーションを開始します")
 
     try:
         automation = IPCLOrderAutomation()
         automation.process_all_csv_files()
         launch_draft_page()
         subprocess.Popen(['explorer', str(automation.pdf_dir)])
-        logger.info("IPCLCalc アプリケーションが正常に完了しました")
     except Exception as e:
         logger.exception(f"アプリケーション実行中にエラーが発生しました: {e}")
         raise
