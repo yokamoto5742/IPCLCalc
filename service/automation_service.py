@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from pathlib import Path
@@ -12,6 +13,8 @@ from service.save_service import SaveService
 from utils.config_manager import load_config, load_environment_variables
 from widgets.progress_window import ProgressWindow
 
+logger = logging.getLogger(__name__)
+
 
 class IPCLOrderAutomation:
     def __init__(self):
@@ -22,9 +25,9 @@ class IPCLOrderAutomation:
             playwright_browsers = base_path / 'playwright' / 'driver' / 'package' / '.local-browsers'
             if playwright_browsers.exists():
                 os.environ['PLAYWRIGHT_BROWSERS_PATH'] = str(playwright_browsers)
-                print(f"[OK] Playwrightブラウザパス設定: {playwright_browsers}")
+                logger.info(f"Playwrightブラウザパス設定: {playwright_browsers}")
             else:
-                print(f"[WARNING] Playwrightブラウザパスが見つかりません: {playwright_browsers}")
+                logger.warning(f"Playwrightブラウザパスが見つかりません: {playwright_browsers}")
 
         load_environment_variables()
 
@@ -41,7 +44,7 @@ class IPCLOrderAutomation:
 
         self.pdf_dir = self.csv_dir / 'pdf'
         self.pdf_dir.mkdir(exist_ok=True)
-        print(f"[OK] PDFダウンロード先: {self.pdf_dir}")
+        logger.info(f"PDFダウンロード先: {self.pdf_dir}")
 
         self.auth_service = AuthService(self.base_url, self.email, self.password)
         self.csv_handler = CSVHandler()
@@ -50,9 +53,9 @@ class IPCLOrderAutomation:
         self.save_service = SaveService(self.pdf_dir, self.calculated_dir)
 
     def process_csv_file(self, csv_path: Path):
-        print(f"\n{'=' * 60}")
-        print(f"処理開始: {csv_path.name}")
-        print(f"{'=' * 60}")
+        logger.info(f"{'=' * 60}")
+        logger.info(f"処理開始: {csv_path.name}")
+        logger.info(f"{'=' * 60}")
 
         self.progress_window.update(f"CSVファイルを読み込み中...\n{csv_path.name}")
         all_data = self.csv_handler.read_csv_file(csv_path)
@@ -61,8 +64,8 @@ class IPCLOrderAutomation:
         all_success = True
 
         for idx, data in enumerate(all_data, 1):
-            print(f"\n[{idx}/{len(all_data)}件目を処理中…]")
-            print(f"  患者ID: {data['id']}, 名前: {data['name']}, 眼: {data['eye']}")
+            logger.info(f"[{idx}/{len(all_data)}件目を処理中…]")
+            logger.info(f"  患者ID: {data['id']}, 名前: {data['name']}, 眼: {data['eye']}")
             self.progress_window.update(f"[{idx}/{len(all_data)}件目を処理中…]\n患者ID: {data['id']}\n名前: {data['name']}\n眼: {data['eye']}")
 
             with sync_playwright() as p:
@@ -128,15 +131,15 @@ class IPCLOrderAutomation:
                     if save_success:
                         self.progress_window.update(f"[{idx}/{len(all_data)}] 注文の下書きが保存されました")
                         if pdf_path:
-                            print(f"[OK] PDF保存先: {pdf_path}")
+                            logger.info(f"PDF保存先: {pdf_path}")
                     else:
-                        print("[WARNING] ブラウザを開いたままにします。手動で確認してください。")
+                        logger.warning("ブラウザを開いたままにします。手動で確認してください。")
                         all_success = False
 
                 except Exception as e:
-                    error_msg = f"[ERROR] エラーが発生しました: {e}"
-                    print(error_msg)
-                    self.progress_window.update(error_msg)
+                    error_msg = f"エラーが発生しました: {e}"
+                    logger.exception(error_msg)
+                    self.progress_window.update(f"[ERROR] {error_msg}")
                     all_success = False
                     raise
 
@@ -148,32 +151,32 @@ class IPCLOrderAutomation:
         if all_success:
             self.save_service.move_csv_to_calculated(csv_path)
 
-        print(f"{'=' * 60}")
-        print(f"処理完了: {csv_path.name}")
-        print(f"{'=' * 60}\n")
+        logger.info(f"{'=' * 60}")
+        logger.info(f"処理完了: {csv_path.name}")
+        logger.info(f"{'=' * 60}")
 
     def process_all_csv_files(self):
         csv_files = list(self.csv_dir.glob('IPCLdata_*.csv'))
 
         if not csv_files:
-            print("処理するCSVファイルが見つかりませんでした")
+            logger.warning("処理するCSVファイルが見つかりませんでした")
             return
 
         self.progress_window.create()
 
         try:
-            print(f"\n{len(csv_files)}件のCSVファイルを処理します")
+            logger.info(f"{len(csv_files)}件のCSVファイルを処理します")
             self.progress_window.update(f"{len(csv_files)}件のCSVファイルを処理します")
 
             for idx, csv_file in enumerate(csv_files, 1):
-                print(f"\n[{idx}/{len(csv_files)}件目を処理中…]")
+                logger.info(f"[{idx}/{len(csv_files)}件目を処理中…]")
                 self.progress_window.update(f"[{idx}/{len(csv_files)}件目のファイルを処理中…]\n{csv_file.name}")
                 self.process_csv_file(csv_file)
 
-            print("\nすべてのファイルの処理が完了しました")
-            print(f"PDFの保存先: {self.pdf_dir}")
+            logger.info("すべてのファイルの処理が完了しました")
+            logger.info(f"PDFの保存先: {self.pdf_dir}")
             self.progress_window.update(f"すべてのファイルの処理が完了しました\n\nPDFの保存先:\n{self.pdf_dir}")
-        
+
         finally:
             if self.progress_window.progress_window:
                 self.progress_window.progress_window.after(1000, self.progress_window.close)

@@ -1,56 +1,67 @@
-import os
 import logging
-import configparser
-from logging.handlers import TimedRotatingFileHandler
+import os
 from datetime import datetime, timedelta
+from logging.handlers import TimedRotatingFileHandler
+from pathlib import Path
 
 
-def load_config() -> configparser.ConfigParser:
-    config = configparser.ConfigParser()
-    config_path = os.path.join(os.path.dirname(__file__), 'config.ini')
-    config.read(config_path)
-    return config
+def get_project_root() -> Path:
+    """プロジェクトルートディレクトリを取得"""
+    return Path(__file__).parent.parent
 
 
-def setup_logging(config: configparser.ConfigParser):
-    log_directory = os.path.join(os.path.dirname(__file__), config.get('LOGGING', 'log_directory', fallback='logs'))
-    log_retention_days = config.getint('LOGGING', 'log_retention_days', fallback=7)
+def setup_logging(log_directory: str = 'logs', log_retention_days: int = 7, log_name: str = 'IPCLCalc'):
+    """
+    ログローテーション機能を設定
 
-    if not os.path.exists(log_directory):
-        os.makedirs(log_directory)
+    Args:
+        log_directory: ログディレクトリ名（プロジェクトルートからの相対パス）
+        log_retention_days: ログ保持日数
+        log_name: ログファイル名のプレフィックス
+    """
+    project_root = get_project_root()
+    log_dir_path = project_root / log_directory
 
-    parent_dir_name = os.path.basename(os.path.dirname(os.path.dirname(log_directory)))
-    log_file = os.path.join(log_directory, f'{parent_dir_name}.log')
+    if not log_dir_path.exists():
+        log_dir_path.mkdir(parents=True, exist_ok=True)
+
+    log_file = log_dir_path / f'{log_name}.log'
 
     file_handler = TimedRotatingFileHandler(
-        filename=log_file,
+        filename=str(log_file),
         when='midnight',
         interval=1,
-        backupCount=log_retention_days
+        backupCount=log_retention_days,
+        encoding='utf-8'
     )
     file_handler.suffix = "%Y-%m-%d.log"
 
+    console_handler = logging.StreamHandler()
+
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    console_handler.setFormatter(formatter)
+
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[file_handler]
+        handlers=[file_handler, console_handler]
     )
 
-    cleanup_old_logs(log_directory, log_retention_days)
+    cleanup_old_logs(log_dir_path, log_retention_days, log_name)
+    logging.info(f"ログシステムを初期化しました: {log_file}")
 
 
-def cleanup_old_logs(log_directory: str, retention_days: int):
+def cleanup_old_logs(log_directory: Path, retention_days: int, log_name: str):
+    """古いログファイルを削除"""
     now = datetime.now()
-    parent_dir_name = os.path.basename(os.path.dirname(os.path.dirname(log_directory)))
-    main_log_file = f'{parent_dir_name}.log'
+    main_log_file = f'{log_name}.log'
 
-    for filename in os.listdir(log_directory):
-        if filename.endswith('.log') and filename != main_log_file:
-            file_path = os.path.join(log_directory, filename)
-            file_modification_time = datetime.fromtimestamp(os.path.getmtime(file_path))
+    for file_path in log_directory.glob('*.log'):
+        if file_path.name != main_log_file:
+            file_modification_time = datetime.fromtimestamp(file_path.stat().st_mtime)
             if now - file_modification_time > timedelta(days=retention_days):
                 try:
-                    os.remove(file_path)
-                    logging.info(f"古いログファイルを削除しました: {filename}")
+                    file_path.unlink()
+                    logging.info(f"古いログファイルを削除しました: {file_path.name}")
                 except OSError as e:
-                    logging.error(f"ログファイルの削除中にエラーが発生しました {filename}: {str(e)}")
+                    logging.error(f"ログファイルの削除中にエラーが発生しました {file_path.name}: {str(e)}")
