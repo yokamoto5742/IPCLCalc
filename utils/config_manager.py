@@ -1,9 +1,12 @@
 import configparser
+import logging
 import os
 import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 
 def get_config_path():
@@ -39,10 +42,10 @@ def load_config() -> configparser.ConfigParser:
         with open(CONFIG_PATH, encoding='utf-8') as f:
             config.read_file(f)
     except FileNotFoundError:
-        print(f"設定ファイルが見つかりません: {CONFIG_PATH}")
+        logger.error(f"設定ファイルが見つかりません: {CONFIG_PATH}")
         raise
     except configparser.Error as e:
-        print(f"設定ファイルの解析中にエラーが発生しました: {e}")
+        logger.error(f"設定ファイルの解析中にエラーが発生しました: {e}")
         raise
     return config
 
@@ -52,5 +55,11 @@ def save_config(config: configparser.ConfigParser):
         with open(CONFIG_PATH, 'w', encoding='utf-8') as configfile:
             config.write(configfile)
     except IOError as e:
-        print(f"設定ファイルの保存中にエラーが発生しました: {e}")
+        logger.error(f"設定ファイルの保存中にエラーが発生しました: {e}")
         raise
+
+
+def get_log_level() -> str:
+    """ログレベルを取得"""
+    config = load_config()
+    return config.get('LOGGING', 'log_level', fallback='INFO').upper()

@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 
+from utils.config_manager import get_log_level
+
 
 def get_project_root() -> Path:
     return Path(__file__).parent.parent
@@ -17,23 +19,30 @@ def setup_logging(log_directory: str = 'logs', log_retention_days: int = 7, log_
 
     log_file = log_dir_path / f'{log_name}.log'
 
+    # config.iniからログレベルを取得
+    log_level_str = get_log_level()
+    log_level = getattr(logging, log_level_str, logging.INFO)
+
     file_handler = TimedRotatingFileHandler(filename=str(log_file), when='midnight', backupCount=log_retention_days,
                                             encoding='utf-8')
     file_handler.suffix = "%Y-%m-%d.log"
+    file_handler.setLevel(log_level)
 
     console_handler = logging.StreamHandler()
+    console_handler.setLevel(log_level)
 
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
     console_handler.setFormatter(formatter)
 
     logging.basicConfig(
-        level=logging.INFO,
+        level=log_level,
         handlers=[file_handler, console_handler]
     )
 
     cleanup_old_logs(log_dir_path, log_retention_days, log_name)
     logging.info(f"ログシステムを初期化しました: {log_file}")
+    logging.info(f"ログレベル: {log_level_str}")
 
 
 def cleanup_old_logs(log_directory: Path, retention_days: int, log_name: str):
