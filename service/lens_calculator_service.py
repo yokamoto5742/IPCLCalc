@@ -4,13 +4,11 @@ from playwright.sync_api import Page
 class LensCalculatorService:
     @staticmethod
     def open_lens_calculator(page: Page):
-        """レンズ計算・注文モーダルを開く"""
         page.click('button:has-text("レンズ計算・注文")')
         page.frame_locator('#calculatorFrame').locator('body').wait_for(state='visible')
 
     @staticmethod
     def select_eye_tab(page: Page, eye: str):
-        """眼別タブを選択"""
         frame = page.frame_locator('#calculatorFrame')
 
         if eye == '両眼':
@@ -25,7 +23,6 @@ class LensCalculatorService:
 
     @staticmethod
     def fill_measurement_data(page: Page, data: dict, eye: str):
-        """測定データを入力"""
         frame = page.frame_locator('#calculatorFrame')
 
         if eye in ['両眼', '右眼']:
@@ -58,7 +55,6 @@ class LensCalculatorService:
 
     @staticmethod
     def select_lens_type(page: Page, data: dict, eye: str):
-        """レンズタイプを選択"""
         frame = page.frame_locator('#calculatorFrame')
 
         if eye in ['両眼', '右眼']:
@@ -77,7 +73,6 @@ class LensCalculatorService:
 
     @staticmethod
     def fill_ata_wtw_data(page: Page, data: dict, eye: str):
-        """ATA/WTWデータを入力"""
         frame = page.frame_locator('#calculatorFrame')
 
         if eye in ['両眼', '右眼']:
@@ -94,6 +89,5 @@ class LensCalculatorService:
 
     @staticmethod
     def click_calculate_button(page: Page):
-        """計算ボタンをクリック"""
         frame = page.frame_locator('#calculatorFrame')
         frame.locator('button#btn-calculate').click()

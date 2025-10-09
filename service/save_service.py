@@ -14,11 +14,9 @@ class SaveService:
         self.calculated_dir = calculated_dir
 
     def click_save_pdf_button(self, page: Page, patient_id: str, patient_name: str) -> str:
-        """PDFを保存し、保存先パスを返す"""
         frame = page.frame_locator('#calculatorFrame')
 
         try:
-            # ダウンロードを待機
             with page.expect_download() as download_info:
                 frame.locator('a:has(i.far.fa-file-pdf)').click()
 
@@ -30,7 +28,7 @@ class SaveService:
 
             download.save_as(pdf_path)
 
-            logger.info(f"PDFを保存しました: {pdf_path}")
+            logger.info(f"計算結果のPDFファイルを保存しました: {pdf_path}")
             return str(pdf_path)
 
         except Exception as e:
@@ -39,13 +37,11 @@ class SaveService:
 
     @staticmethod
     def save_input(page: Page):
-        """入力を保存"""
         frame = page.frame_locator('#calculatorFrame')
         frame.locator('button#btn-save-draft-modal').click()
 
     @staticmethod
     def save_draft(page: Page) -> bool:
-        """下書きを保存"""
         try:
             save_button = page.locator('button:has-text("下書き保存")')
             save_button.wait_for(state='visible', timeout=2000)
@@ -62,9 +58,8 @@ class SaveService:
             return False
 
     def move_csv_to_calculated(self, csv_path: Path):
-        """CSVファイルをcalculatedディレクトリに移動"""
         self.calculated_dir.mkdir(exist_ok=True)
 
         destination = self.calculated_dir / csv_path.name
         shutil.move(str(csv_path), str(destination))
-        logger.info(f"{csv_path.name} を calculated ディレクトリに移動しました")
+        logger.info(f"{csv_path.name} を 計算済フォルダに移動しました")

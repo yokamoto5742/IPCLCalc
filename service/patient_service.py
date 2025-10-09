@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 class PatientService:
     @staticmethod
     def fill_patient_info(page: Page, data: dict):
-        """患者情報を入力"""
         page.wait_for_load_state('networkidle')
 
         page.get_by_label("患者ID").fill(data['id'])
@@ -37,7 +36,6 @@ class PatientService:
 
     @staticmethod
     def fill_birthday(page: Page, birthday: str):
-        """誕生日を入力"""
         frame = page.frame_locator('#calculatorFrame')
 
         try:
