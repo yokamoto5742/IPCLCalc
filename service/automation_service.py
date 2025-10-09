@@ -1,14 +1,15 @@
 import logging
 import os
-import sys
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
 from service.auth_service import AuthService
+from service.browser_manager import BrowserManager
 from service.csv_handler import CSVHandler
 from service.lens_calculator_service import LensCalculatorService
 from service.patient_service import PatientService
+from service.patient_workflow_executor import PatientWorkflowExecutor
 from service.save_service import SaveService
 from utils.config_manager import load_config, load_environment_variables
 from widgets.progress_window import ProgressWindow
@@ -17,40 +18,43 @@ logger = logging.getLogger(__name__)
 
 
 class IPCLOrderAutomation:
+    """CSVファイルからIPCL注文を自動処理するメインオーケストレーター"""
+
     def __init__(self):
-        self.progress_window = ProgressWindow()
-
-        if getattr(sys, 'frozen', False):
-            base_path = Path(sys._MEIPASS)
-            playwright_browsers = base_path / 'playwright' / 'driver' / 'package' / '.local-browsers'
-            if playwright_browsers.exists():
-                os.environ['PLAYWRIGHT_BROWSERS_PATH'] = str(playwright_browsers)
-                logger.info(f"Playwrightブラウザパス設定: {playwright_browsers}")
-            else:
-                logger.warning(f"Playwrightブラウザパスが見つかりません: {playwright_browsers}")
-
         load_environment_variables()
-
         config = load_config()
 
-        self.base_url = config.get('URL', 'base_url')
-        self.email = os.getenv('EMAIL')
-        self.password = os.getenv('PASSWORD')
+        # ディレクトリ設定
         self.csv_dir = Path(config.get('Paths', 'csv_dir'))
         self.calculated_dir = Path(config.get('Paths', 'calculated_dir'))
-        self.error_dir = Path(config.get('Paths', 'error_dir'))
-        self.log_dir = Path(config.get('Paths', 'log_dir'))
-        self.headless = config.getboolean('Settings', 'headless')
-
         self.pdf_dir = self.csv_dir / 'pdf'
         self.pdf_dir.mkdir(exist_ok=True)
         logger.info(f"PDFダウンロード先: {self.pdf_dir}")
 
-        self.auth_service = AuthService(self.base_url, self.email, self.password)
+        # 認証情報
+        base_url = config.get('URL', 'base_url')
+        email = os.getenv('EMAIL')
+        password = os.getenv('PASSWORD')
+        headless = config.getboolean('Settings', 'headless')
+
+        # サービス初期化
+        self.progress_window = ProgressWindow()
         self.csv_handler = CSVHandler()
-        self.patient_service = PatientService()
-        self.lens_calculator_service = LensCalculatorService()
-        self.save_service = SaveService(self.pdf_dir, self.calculated_dir)
+        self.browser_manager = BrowserManager(headless)
+
+        auth_service = AuthService(base_url, email, password)
+        patient_service = PatientService()
+        lens_calculator_service = LensCalculatorService()
+        save_service = SaveService(self.pdf_dir, self.calculated_dir)
+
+        self.workflow_executor = PatientWorkflowExecutor(
+            auth_service,
+            patient_service,
+            lens_calculator_service,
+            save_service,
+            self.progress_window,
+        )
+        self.save_service = save_service
 
     def _read_csv_data(self, csv_path: Path) -> list[dict]:
         """CSVファイルを読み込む"""
@@ -58,67 +62,6 @@ class IPCLOrderAutomation:
         all_data = self.csv_handler.read_csv_file(csv_path)
         self.progress_window.update(f"{len(all_data)}件のデータを読み込みました")
         return all_data
-
-    def _execute_patient_workflow(self, page, idx: int, total: int, data: dict) -> tuple[bool, Path | None]:
-        """患者データ処理のワークフローを実行"""
-        pdf_path = None
-
-        # ログイン
-        self.progress_window.update(f"[{idx}/{total}] Webサイトにログイン中...")
-        self.auth_service.login(page)
-
-        # 患者情報を入力
-        self.progress_window.update(f"[{idx}/{total}] 患者情報を入力中...")
-        self.patient_service.fill_patient_info(page, data)
-
-        # レンズ計算・注文モーダルを開く
-        self.progress_window.update(f"[{idx}/{total}] レンズ計算・注文を開いています...")
-        self.lens_calculator_service.open_lens_calculator(page)
-
-        # 眼のタブを選択
-        self.progress_window.update(f"[{idx}/{total}] {data['eye']}タブを選択中...")
-        self.lens_calculator_service.select_eye_tab(page, data['eye'])
-
-        # 誕生日を入力
-        self.progress_window.update(f"[{idx}/{total}] 誕生日を入力中...")
-        self.patient_service.fill_birthday(page, data['birthday'])
-
-        # 測定データを入力
-        self.progress_window.update(f"[{idx}/{total}] 測定データを入力中...")
-        self.lens_calculator_service.fill_measurement_data(page, data, data['eye'])
-
-        # レンズタイプを選択
-        self.progress_window.update(f"[{idx}/{total}] レンズタイプを選択中...")
-        self.lens_calculator_service.select_lens_type(page, data, data['eye'])
-
-        # ATA/WTWデータを入力
-        self.progress_window.update(f"[{idx}/{total}] ATA/WTWデータを入力中...")
-        self.lens_calculator_service.fill_ata_wtw_data(page, data, data['eye'])
-
-        # レンズ計算
-        self.progress_window.update(f"[{idx}/{total}] レンズ計算を実行中...")
-        self.lens_calculator_service.click_calculate_button(page)
-
-        # PDF保存
-        self.progress_window.update(f"[{idx}/{total}] PDFを保存中...")
-        pdf_path = self.save_service.click_save_pdf_button(page, data['id'], data['name'])
-
-        # 入力を保存
-        self.progress_window.update(f"[{idx}/{total}] 入力を保存中...")
-        self.save_service.save_input(page)
-
-        # 下書き保存
-        self.progress_window.update(f"[{idx}/{total}] 下書き保存中...")
-        save_success = self.save_service.save_draft(page)
-
-        if save_success:
-            self.progress_window.update(f"[{idx}/{total}] 注文の下書きが保存されました")
-            if pdf_path:
-                logger.info(f"PDF保存先: {pdf_path}")
-        else:
-            logger.warning("ブラウザを開いたままにします。手動で確認してください。")
-
-        return save_success, pdf_path
 
     def _process_single_record(self, idx: int, total: int, data: dict) -> bool:
         """単一レコードを処理"""
@@ -129,12 +72,12 @@ class IPCLOrderAutomation:
         )
 
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=self.headless)
-            context = browser.new_context(accept_downloads=True)
-            page = context.new_page()
+            browser = self.browser_manager.create_browser(p)
+            context = self.browser_manager.create_context(browser)
+            page = self.browser_manager.create_page(context)
 
             try:
-                save_success, _ = self._execute_patient_workflow(page, idx, total, data)
+                save_success, _ = self.workflow_executor.execute(page, idx, total, data)
                 return save_success
 
             except Exception as e:
