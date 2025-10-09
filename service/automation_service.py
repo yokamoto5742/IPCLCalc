@@ -53,9 +53,7 @@ class IPCLOrderAutomation:
         self.save_service = SaveService(self.pdf_dir, self.calculated_dir)
 
     def process_csv_file(self, csv_path: Path):
-        logger.info(f"{'=' * 60}")
         logger.info(f"処理開始: {csv_path.name}")
-        logger.info(f"{'=' * 60}")
 
         self.progress_window.update(f"CSVファイルを読み込み中...\n{csv_path.name}")
         all_data = self.csv_handler.read_csv_file(csv_path)
