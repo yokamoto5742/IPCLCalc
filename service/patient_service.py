@@ -1,4 +1,8 @@
+import logging
+
 from playwright.sync_api import Page
+
+logger = logging.getLogger(__name__)
 
 
 class PatientService:
@@ -20,7 +24,7 @@ class PatientService:
                 page.get_by_label("性別*").click()
                 page.click(f'li:has-text("{data["sex"]}")')
             except Exception:
-                print(f"[WARNING] 性別選択をスキップしました")
+                logger.warning("性別選択をスキップしました")
 
         try:
             page.get_by_label("手術日").fill(data['surgery_date'])
@@ -47,4 +51,4 @@ class PatientService:
             page.wait_for_timeout(500)
 
         except Exception as e:
-            print(f"[WARNING] 誕生日入力をスキップしました: {e}")
+            logger.warning(f"誕生日入力をスキップしました: {e}")

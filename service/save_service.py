@@ -1,8 +1,11 @@
+import logging
 import shutil
 from datetime import datetime
 from pathlib import Path
 
 from playwright.sync_api import Page
+
+logger = logging.getLogger(__name__)
 
 
 class SaveService:
@@ -27,11 +30,11 @@ class SaveService:
 
             download.save_as(pdf_path)
 
-            print(f"[OK] PDFを保存しました: {pdf_path}")
+            logger.info(f"PDFを保存しました: {pdf_path}")
             return str(pdf_path)
 
         except Exception as e:
-            print(f"[ERROR] PDF保存中にエラーが発生しました: {e}")
+            logger.error(f"PDF保存中にエラーが発生しました: {e}")
             raise
 
     @staticmethod
@@ -54,10 +57,10 @@ class SaveService:
                 page.wait_for_load_state('networkidle')
                 return True
             else:
-                print("[WARNING] 下書き保存ボタンが無効のため、処理をスキップしました")
+                logger.warning("下書き保存ボタンが無効のため、処理をスキップしました")
                 return False
         except Exception as e:
-            print(f"[WARNING] 下書き保存をスキップしました: {e}")
+            logger.warning(f"下書き保存をスキップしました: {e}")
             return False
 
     def move_csv_to_calculated(self, csv_path: Path):
@@ -66,4 +69,4 @@ class SaveService:
 
         destination = self.calculated_dir / csv_path.name
         shutil.move(str(csv_path), str(destination))
-        print(f"[OK] {csv_path.name} を calculated ディレクトリに移動しました")
+        logger.info(f"{csv_path.name} を calculated ディレクトリに移動しました")

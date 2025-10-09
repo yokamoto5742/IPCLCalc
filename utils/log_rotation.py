@@ -1,24 +1,14 @@
 import logging
-import os
 from datetime import datetime, timedelta
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 
 
 def get_project_root() -> Path:
-    """プロジェクトルートディレクトリを取得"""
     return Path(__file__).parent.parent
 
 
 def setup_logging(log_directory: str = 'logs', log_retention_days: int = 7, log_name: str = 'IPCLCalc'):
-    """
-    ログローテーション機能を設定
-
-    Args:
-        log_directory: ログディレクトリ名（プロジェクトルートからの相対パス）
-        log_retention_days: ログ保持日数
-        log_name: ログファイル名のプレフィックス
-    """
     project_root = get_project_root()
     log_dir_path = project_root / log_directory
 
@@ -27,13 +17,8 @@ def setup_logging(log_directory: str = 'logs', log_retention_days: int = 7, log_
 
     log_file = log_dir_path / f'{log_name}.log'
 
-    file_handler = TimedRotatingFileHandler(
-        filename=str(log_file),
-        when='midnight',
-        interval=1,
-        backupCount=log_retention_days,
-        encoding='utf-8'
-    )
+    file_handler = TimedRotatingFileHandler(filename=str(log_file), when='midnight', backupCount=log_retention_days,
+                                            encoding='utf-8')
     file_handler.suffix = "%Y-%m-%d.log"
 
     console_handler = logging.StreamHandler()
@@ -52,7 +37,6 @@ def setup_logging(log_directory: str = 'logs', log_retention_days: int = 7, log_
 
 
 def cleanup_old_logs(log_directory: Path, retention_days: int, log_name: str):
-    """古いログファイルを削除"""
     now = datetime.now()
     main_log_file = f'{log_name}.log'
 
