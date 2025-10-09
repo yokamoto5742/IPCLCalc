@@ -52,98 +52,112 @@ class IPCLOrderAutomation:
         self.lens_calculator_service = LensCalculatorService()
         self.save_service = SaveService(self.pdf_dir, self.calculated_dir)
 
-    def process_csv_file(self, csv_path: Path):
-        logger.info(f"処理開始: {csv_path.name}")
-
+    def _read_csv_data(self, csv_path: Path) -> list[dict]:
+        """CSVファイルを読み込む"""
         self.progress_window.update(f"CSVファイルを読み込み中...\n{csv_path.name}")
         all_data = self.csv_handler.read_csv_file(csv_path)
         self.progress_window.update(f"{len(all_data)}件のデータを読み込みました")
+        return all_data
 
+    def _execute_patient_workflow(self, page, idx: int, total: int, data: dict) -> tuple[bool, Path | None]:
+        """患者データ処理のワークフローを実行"""
+        pdf_path = None
+
+        # ログイン
+        self.progress_window.update(f"[{idx}/{total}] Webサイトにログイン中...")
+        self.auth_service.login(page)
+
+        # 患者情報を入力
+        self.progress_window.update(f"[{idx}/{total}] 患者情報を入力中...")
+        self.patient_service.fill_patient_info(page, data)
+
+        # レンズ計算・注文モーダルを開く
+        self.progress_window.update(f"[{idx}/{total}] レンズ計算・注文を開いています...")
+        self.lens_calculator_service.open_lens_calculator(page)
+
+        # 眼のタブを選択
+        self.progress_window.update(f"[{idx}/{total}] {data['eye']}タブを選択中...")
+        self.lens_calculator_service.select_eye_tab(page, data['eye'])
+
+        # 誕生日を入力
+        self.progress_window.update(f"[{idx}/{total}] 誕生日を入力中...")
+        self.patient_service.fill_birthday(page, data['birthday'])
+
+        # 測定データを入力
+        self.progress_window.update(f"[{idx}/{total}] 測定データを入力中...")
+        self.lens_calculator_service.fill_measurement_data(page, data, data['eye'])
+
+        # レンズタイプを選択
+        self.progress_window.update(f"[{idx}/{total}] レンズタイプを選択中...")
+        self.lens_calculator_service.select_lens_type(page, data, data['eye'])
+
+        # ATA/WTWデータを入力
+        self.progress_window.update(f"[{idx}/{total}] ATA/WTWデータを入力中...")
+        self.lens_calculator_service.fill_ata_wtw_data(page, data, data['eye'])
+
+        # レンズ計算
+        self.progress_window.update(f"[{idx}/{total}] レンズ計算を実行中...")
+        self.lens_calculator_service.click_calculate_button(page)
+
+        # PDF保存
+        self.progress_window.update(f"[{idx}/{total}] PDFを保存中...")
+        pdf_path = self.save_service.click_save_pdf_button(page, data['id'], data['name'])
+
+        # 入力を保存
+        self.progress_window.update(f"[{idx}/{total}] 入力を保存中...")
+        self.save_service.save_input(page)
+
+        # 下書き保存
+        self.progress_window.update(f"[{idx}/{total}] 下書き保存中...")
+        save_success = self.save_service.save_draft(page)
+
+        if save_success:
+            self.progress_window.update(f"[{idx}/{total}] 注文の下書きが保存されました")
+            if pdf_path:
+                logger.info(f"PDF保存先: {pdf_path}")
+        else:
+            logger.warning("ブラウザを開いたままにします。手動で確認してください。")
+
+        return save_success, pdf_path
+
+    def _process_single_record(self, idx: int, total: int, data: dict) -> bool:
+        """単一レコードを処理"""
+        logger.info(f"[{idx}/{total}件目を処理中…]")
+        logger.info(f"  患者ID: {data['id']}, 名前: {data['name']}, 眼: {data['eye']}")
+        self.progress_window.update(
+            f"[{idx}/{total}件目を処理中…]\n患者ID: {data['id']}\n名前: {data['name']}\n眼: {data['eye']}"
+        )
+
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=self.headless)
+            context = browser.new_context(accept_downloads=True)
+            page = context.new_page()
+
+            try:
+                save_success, _ = self._execute_patient_workflow(page, idx, total, data)
+                return save_success
+
+            except Exception as e:
+                error_msg = f"エラーが発生しました: {e}"
+                logger.exception(error_msg)
+                self.progress_window.update(f"[ERROR] {error_msg}")
+                return False
+
+            finally:
+                page.wait_for_timeout(2000)
+                browser.close()
+
+    def process_csv_file(self, csv_path: Path):
+        """CSVファイルを処理"""
+        logger.info(f"処理開始: {csv_path.name}")
+
+        all_data = self._read_csv_data(csv_path)
         all_success = True
 
         for idx, data in enumerate(all_data, 1):
-            logger.info(f"[{idx}/{len(all_data)}件目を処理中…]")
-            logger.info(f"  患者ID: {data['id']}, 名前: {data['name']}, 眼: {data['eye']}")
-            self.progress_window.update(f"[{idx}/{len(all_data)}件目を処理中…]\n患者ID: {data['id']}\n名前: {data['name']}\n眼: {data['eye']}")
-
-            with sync_playwright() as p:
-                browser = p.chromium.launch(headless=self.headless)
-
-                context = browser.new_context(
-                    accept_downloads=True
-                )
-                page = context.new_page()
-
-                save_success = False
-                pdf_path = None
-
-                try:
-                    # ログイン
-                    self.progress_window.update(f"[{idx}/{len(all_data)}] Webサイトにログイン中...")
-                    self.auth_service.login(page)
-
-                    # 患者情報を入力
-                    self.progress_window.update(f"[{idx}/{len(all_data)}] 患者情報を入力中...")
-                    self.patient_service.fill_patient_info(page, data)
-
-                    # レンズ計算・注文モーダルを開く
-                    self.progress_window.update(f"[{idx}/{len(all_data)}] レンズ計算・注文を開いています...")
-                    self.lens_calculator_service.open_lens_calculator(page)
-
-                    # 眼のタブを選択
-                    self.progress_window.update(f"[{idx}/{len(all_data)}] {data['eye']}タブを選択中...")
-                    self.lens_calculator_service.select_eye_tab(page, data['eye'])
-
-                    # 誕生日を入力
-                    self.progress_window.update(f"[{idx}/{len(all_data)}] 誕生日を入力中...")
-                    self.patient_service.fill_birthday(page, data['birthday'])
-
-                    # 測定データを入力
-                    self.progress_window.update(f"[{idx}/{len(all_data)}] 測定データを入力中...")
-                    self.lens_calculator_service.fill_measurement_data(page, data, data['eye'])
-
-                    # レンズタイプを選択
-                    self.progress_window.update(f"[{idx}/{len(all_data)}] レンズタイプを選択中...")
-                    self.lens_calculator_service.select_lens_type(page, data, data['eye'])
-
-                    # ATA/WTWデータを入力
-                    self.progress_window.update(f"[{idx}/{len(all_data)}] ATA/WTWデータを入力中...")
-                    self.lens_calculator_service.fill_ata_wtw_data(page, data, data['eye'])
-
-                    # レンズ計算
-                    self.progress_window.update(f"[{idx}/{len(all_data)}] レンズ計算を実行中...")
-                    self.lens_calculator_service.click_calculate_button(page)
-
-                    # PDF保存
-                    self.progress_window.update(f"[{idx}/{len(all_data)}] PDFを保存中...")
-                    pdf_path = self.save_service.click_save_pdf_button(page, data['id'], data['name'])
-
-                    # 入力を保存
-                    self.progress_window.update(f"[{idx}/{len(all_data)}] 入力を保存中...")
-                    self.save_service.save_input(page)
-
-                    # 下書き保存
-                    self.progress_window.update(f"[{idx}/{len(all_data)}] 下書き保存中...")
-                    save_success = self.save_service.save_draft(page)
-
-                    if save_success:
-                        self.progress_window.update(f"[{idx}/{len(all_data)}] 注文の下書きが保存されました")
-                        if pdf_path:
-                            logger.info(f"PDF保存先: {pdf_path}")
-                    else:
-                        logger.warning("ブラウザを開いたままにします。手動で確認してください。")
-                        all_success = False
-
-                except Exception as e:
-                    error_msg = f"エラーが発生しました: {e}"
-                    logger.exception(error_msg)
-                    self.progress_window.update(f"[ERROR] {error_msg}")
-                    all_success = False
-
-                finally:
-                    # リソースは常にクリーンアップ
-                    page.wait_for_timeout(2000)
-                    browser.close()
+            success = self._process_single_record(idx, len(all_data), data)
+            if not success:
+                all_success = False
 
         if all_success:
             self.save_service.move_csv_to_calculated(csv_path)
