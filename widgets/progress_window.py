@@ -9,8 +9,8 @@ class ProgressWindow:
         self.progress_window = None
         self.progress_label = None
 
-        # 設定の読み込み
         config = load_config()
+
         self.font_size = config.getint('Appearance', 'font_size', fallback=11)
         self.window_width = config.getint('Appearance', 'window_width', fallback=500)
         self.window_height = config.getint('Appearance', 'window_height', fallback=150)
@@ -34,7 +34,7 @@ class ProgressWindow:
 
         self.progress_label = tk.Label(
             self.progress_window,
-            text="処理を開始します...",
+            text="計算処理を開始します...",
             font=("MS Gothic", self.font_size),
             wraplength=self.window_width - 50,
             justify=tk.LEFT,

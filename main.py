@@ -9,9 +9,9 @@ from utils.log_rotation import setup_logging
 
 def main():
     config = load_config()
+
     log_directory = config.get('LOGGING', 'log_directory', fallback='logs')
     log_retention_days = config.getint('LOGGING', 'log_retention_days', fallback=7)
-
     setup_logging(log_directory=log_directory, log_retention_days=log_retention_days)
 
     logger = logging.getLogger(__name__)
