@@ -56,10 +56,11 @@ class TestIPCLOrderAutomation:
 
         automation = IPCLOrderAutomation()
 
-        assert automation.base_url == 'https://example.com'
-        assert automation.email == 'test@example.com'
-        assert automation.password == 'password123'
-        assert automation.headless is True
+        # 認証情報やbase_urlはauth_serviceやbrowser_managerに渡されるため、
+        # IPCLOrderAutomationのインスタンス属性としては保持されない
+        assert automation.csv_handler is not None
+        assert automation.browser_manager is not None
+        assert automation.workflow_executor is not None
 
     @patch('service.automation_service.load_environment_variables')
     @patch('service.automation_service.load_config')
@@ -97,11 +98,12 @@ class TestIPCLOrderAutomation:
 
         automation = IPCLOrderAutomation()
 
-        assert automation.auth_service is not None
+        # リファクタリング後はworkflow_executorにサービスが統合されている
         assert automation.csv_handler is not None
-        assert automation.patient_service is not None
-        assert automation.lens_calculator_service is not None
+        assert automation.browser_manager is not None
+        assert automation.workflow_executor is not None
         assert automation.save_service is not None
+        assert automation.progress_window is not None
 
     @patch('service.automation_service.Path.mkdir')
     @patch('service.automation_service.load_environment_variables')
@@ -256,7 +258,7 @@ class TestIPCLOrderAutomation:
     @patch('service.automation_service.load_environment_variables')
     @patch('service.automation_service.load_config')
     @patch.dict(os.environ, {'EMAIL': 'test@example.com', 'PASSWORD': 'password123'})
-    def test_process_all_csv_files_handles_no_files(self, mock_load_config, mock_load_env, mock_config, tmp_path, capsys):
+    def test_process_all_csv_files_handles_no_files(self, mock_load_config, mock_load_env, mock_config, tmp_path, caplog):
         """CSVファイルが見つからない場合の処理を確認"""
         mock_config.get.side_effect = lambda section, key: {
             ('URL', 'base_url'): 'https://example.com',
@@ -272,8 +274,8 @@ class TestIPCLOrderAutomation:
 
         automation.process_all_csv_files()
 
-        captured = capsys.readouterr()
-        assert "処理するCSVファイルが見つかりませんでした" in captured.out
+        # logger.warningを使用しているため、caplogで確認
+        assert "処理するCSVファイルが見つかりませんでした" in caplog.text
 
     @patch('service.automation_service.Path.mkdir')
     @patch('service.automation_service.load_environment_variables')
@@ -305,9 +307,11 @@ class TestIPCLOrderAutomation:
 
         automation = IPCLOrderAutomation()
 
-        # 環境変数が設定されていない場合、Noneが設定される
-        assert automation.email is None
-        assert automation.password is None
+        # 環境変数が設定されていない場合でも初期化は成功する
+        # 認証情報はauth_serviceに渡されており、IPCLOrderAutomationには保持されない
+        assert automation.csv_handler is not None
+        assert automation.browser_manager is not None
+        assert automation.workflow_executor is not None
 
     @patch('service.automation_service.load_environment_variables')
     @patch('service.automation_service.load_config')

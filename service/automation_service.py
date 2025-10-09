@@ -87,7 +87,6 @@ class IPCLOrderAutomation:
                 return False
 
             finally:
-                page.wait_for_timeout(2000)
                 browser.close()
 
     def process_csv_file(self, csv_path: Path):

@@ -9,14 +9,13 @@ class PatientService:
     @staticmethod
     def fill_patient_info(page: Page, data: dict):
         """患者情報を入力"""
-        page.wait_for_load_state('domcontentloaded')
-        page.wait_for_timeout(1000)
+        page.wait_for_load_state('networkidle')
 
         page.get_by_label("患者ID").fill(data['id'])
 
         try:
             page.locator('#select2-order-sex-container').click()
-            page.wait_for_timeout(500)
+            page.locator('li.select2-results__option').first.wait_for(state='visible')
             sex_index = 0 if data['sex'] == '男性' else 1
             page.locator('li.select2-results__option').nth(sex_index).click()
         except Exception as e:
@@ -48,7 +47,6 @@ class PatientService:
             birthday_input = frame.locator('input[placeholder="dd/mm/yyyy"]').first
             birthday_input.fill(formatted_birthday)
             birthday_input.press('Enter')
-            page.wait_for_timeout(500)
 
         except Exception as e:
             logger.warning(f"誕生日入力をスキップしました: {e}")

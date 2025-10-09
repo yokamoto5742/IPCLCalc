@@ -6,7 +6,7 @@ class LensCalculatorService:
     def open_lens_calculator(page: Page):
         """レンズ計算・注文モーダルを開く"""
         page.click('button:has-text("レンズ計算・注文")')
-        page.wait_for_timeout(500)
+        page.frame_locator('#calculatorFrame').locator('body').wait_for(state='visible')
 
     @staticmethod
     def select_eye_tab(page: Page, eye: str):
@@ -22,8 +22,6 @@ class LensCalculatorService:
             frame.locator('a:has-text("右眼")').click()
         elif eye == '左眼':
             frame.locator('a:has-text("左眼")').click()
-
-        page.wait_for_timeout(500)
 
     @staticmethod
     def fill_measurement_data(page: Page, data: dict, eye: str):
@@ -99,4 +97,3 @@ class LensCalculatorService:
         """計算ボタンをクリック"""
         frame = page.frame_locator('#calculatorFrame')
         frame.locator('button#btn-calculate').click()
-        page.wait_for_timeout(500)
