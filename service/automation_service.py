@@ -104,9 +104,7 @@ class IPCLOrderAutomation:
         if all_success:
             self.save_service.move_csv_to_calculated(csv_path)
 
-        logger.info(f"{'=' * 60}")
         logger.info(f"処理完了: {csv_path.name}")
-        logger.info(f"{'=' * 60}")
 
     def process_all_csv_files(self):
         csv_files = list(self.csv_dir.glob('IPCLdata_*.csv'))
