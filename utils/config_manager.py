@@ -60,6 +60,5 @@ def save_config(config: configparser.ConfigParser):
 
 
 def get_log_level() -> str:
-    """ログレベルを取得"""
     config = load_config()
     return config.get('LOGGING', 'log_level', fallback='INFO').upper()
