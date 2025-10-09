@@ -19,22 +19,22 @@ class PatientService:
             page.wait_for_timeout(500)
             sex_index = 0 if data['sex'] == '男性' else 1
             page.locator('li.select2-results__option').nth(sex_index).click()
-        except:
+        except Exception as e:
             try:
                 page.get_by_label("性別*").click()
                 page.click(f'li:has-text("{data["sex"]}")')
-            except Exception:
+            except Exception as retry_error:
                 logger.warning("性別選択をスキップしました")
 
         try:
             page.get_by_label("手術日").fill(data['surgery_date'])
             page.get_by_label("手術日").press('Enter')
-        except:
+        except Exception as e:
             try:
                 page.locator('input[name*="surgery"]').first.fill(data['surgery_date'])
                 page.locator('input[name*="surgery"]').first.press('Enter')
-            except:
-                pass
+            except Exception as retry_error:
+                logger.warning(f"手術日入力をスキップしました: {retry_error}")
 
     @staticmethod
     def fill_birthday(page: Page, birthday: str):
