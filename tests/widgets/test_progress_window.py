@@ -186,7 +186,7 @@ class TestProgressWindow:
 
         # Labelが正しいテキストで呼ばれているか確認
         call_kwargs = mock_label.call_args[1]
-        assert call_kwargs['text'] == "処理を開始します..."
+        assert call_kwargs['text'] == "計算処理を開始します..."
 
     @patch('widgets.progress_window.tk.Tk')
     @patch('widgets.progress_window.tk.Toplevel')
