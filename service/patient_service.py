@@ -27,6 +27,7 @@ class PatientService:
         try:
             page.get_by_label("手術日").fill(data['surgery_date'])
             page.get_by_label("手術日").press('Enter')
+            logger.info(f"手術日を入力しました: {surgery_date}")
         except Exception as e:
             try:
                 page.locator('input[name*="surgery"]').first.fill(data['surgery_date'])
@@ -39,12 +40,10 @@ class PatientService:
         frame = page.frame_locator('#calculatorFrame')
 
         try:
-            month, day, year = birthday.split('/')
-            formatted_birthday = f"{day}/{month}/{year}"
-
             birthday_input = frame.locator('input[placeholder="dd/mm/yyyy"]').first
-            birthday_input.fill(formatted_birthday)
+            birthday_input.fill(birthday)
             birthday_input.press('Enter')
+            logger.info(f"誕生日を入力しました: {birthday}")
 
         except Exception as e:
             logger.warning(f"誕生日入力をスキップしました: {e}")
