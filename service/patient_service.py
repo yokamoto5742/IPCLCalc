@@ -35,8 +35,6 @@ class PatientService:
             try:
                 surgery_date_input = page.locator('input[name*="surgery"]').first
                 surgery_date_input.click()
-                surgery_date_input.press('Control+A')
-                surgery_date_input.press('Delete')
                 surgery_date_input.type(data['surgery_date'], delay=100)
                 surgery_date_input.press('Enter')
                 logger.info(f"手術日を入力しました: {data['surgery_date']}")
