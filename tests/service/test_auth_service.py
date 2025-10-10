@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from service.auth_service import AuthService
 
@@ -19,14 +20,7 @@ class TestAuthService:
     @pytest.fixture
     def mock_page(self):
         """Playwrightのページモックを提供するフィクスチャ"""
-        page = Mock()
-
-        # locatorメソッドのモック設定
-        mock_locator = Mock()
-        mock_locator.count.return_value = 1
-        page.locator.return_value = mock_locator
-
-        return page
+        return Mock()
 
     def test_init_stores_credentials(self, auth_service):
         """初期化時に認証情報が正しく保存されることを確認"""
@@ -47,21 +41,19 @@ class TestAuthService:
         assert mock_page.wait_for_load_state.call_count == 2
         mock_page.wait_for_load_state.assert_any_call('networkidle')
 
-    def test_login_fills_login_id_field(self, auth_service, mock_page):
-        """ログイン時にログインIDフィールドを入力することを確認"""
+    def test_login_fills_email_field(self, auth_service, mock_page):
+        """ログイン時にメールフィールドを入力することを確認"""
         auth_service.login(mock_page)
 
-        # locatorが呼ばれたことを確認
-        assert mock_page.locator.call_count >= 2  # login_id + password
-        # fillメソッドが呼ばれたことを確認
-        mock_page.locator.return_value.fill.assert_any_call("test@example.com")
+        mock_page.get_by_placeholder.assert_called_once_with("ログインID")
+        mock_page.get_by_placeholder.return_value.fill.assert_called_once_with("test@example.com")
 
     def test_login_fills_password_field(self, auth_service, mock_page):
         """ログイン時にパスワードフィールドを入力することを確認"""
         auth_service.login(mock_page)
 
-        # fillメソッドが呼ばれたことを確認
-        mock_page.locator.return_value.fill.assert_any_call("password123")
+        mock_page.get_by_label.assert_called_once_with("パスワード")
+        mock_page.get_by_label.return_value.fill.assert_called_once_with("password123")
 
     def test_login_clicks_signin_button(self, auth_service, mock_page):
         """ログイン時にサインインボタンをクリックすることを確認"""
@@ -74,16 +66,10 @@ class TestAuthService:
         auth_service = AuthService("", "", "")
         mock_page = Mock()
 
-        # locatorメソッドのモック設定
-        mock_locator = Mock()
-        mock_locator.count.return_value = 1
-        mock_page.locator.return_value = mock_locator
-
         auth_service.login(mock_page)
 
-        # 空文字列で入力されたことを確認
-        calls = mock_page.locator.return_value.fill.call_args_list
-        assert any(call[0][0] == "" for call in calls)
+        mock_page.get_by_placeholder.return_value.fill.assert_called_once_with("")
+        mock_page.get_by_label.return_value.fill.assert_called_once_with("")
 
     def test_login_with_special_characters_in_password(self):
         """特殊文字を含むパスワードでログインできることを確認"""
@@ -94,15 +80,9 @@ class TestAuthService:
         )
         mock_page = Mock()
 
-        # locatorメソッドのモック設定
-        mock_locator = Mock()
-        mock_locator.count.return_value = 1
-        mock_page.locator.return_value = mock_locator
-
         auth_service.login(mock_page)
 
-        # 特殊文字を含むパスワードで入力されたことを確認
-        mock_page.locator.return_value.fill.assert_any_call("P@ssw0rd!#$%")
+        mock_page.get_by_label.return_value.fill.assert_called_once_with("P@ssw0rd!#$%")
 
     def test_login_handles_page_exception(self, auth_service, mock_page):
         """ページ遷移時の例外を適切に処理することを確認"""
@@ -110,89 +90,3 @@ class TestAuthService:
 
         with pytest.raises(Exception, match="Network error"):
             auth_service.login(mock_page)
-
-    def test_fill_login_id_tries_multiple_selectors(self, auth_service):
-        """ログインID入力で複数のセレクタを試行することを確認"""
-        mock_page = Mock()
-        mock_locator = Mock()
-        mock_locator.count.return_value = 1
-        mock_page.locator.return_value = mock_locator
-
-        auth_service._fill_login_id(mock_page)
-
-        # 最初のセレクタで成功する
-        mock_page.locator.assert_called_with('#login-form-login')
-        mock_locator.fill.assert_called_once_with("test@example.com")
-
-    def test_fill_login_id_fallback_to_second_selector(self, auth_service):
-        """ログインID入力で最初のセレクタが失敗した場合に次のセレクタを試行することを確認"""
-        mock_page = Mock()
-
-        # 最初のlocator呼び出しは要素が見つからない
-        first_locator = Mock()
-        first_locator.count.return_value = 0
-
-        # 2番目のlocator呼び出しは成功
-        second_locator = Mock()
-        second_locator.count.return_value = 1
-
-        mock_page.locator.side_effect = [first_locator, second_locator]
-
-        auth_service._fill_login_id(mock_page)
-
-        # 2つのセレクタが試行されたことを確認
-        assert mock_page.locator.call_count == 2
-        second_locator.fill.assert_called_once_with("test@example.com")
-
-    def test_fill_login_id_raises_exception_when_no_selector_works(self, auth_service):
-        """すべてのセレクタが失敗した場合に例外を発生させることを確認"""
-        mock_page = Mock()
-        mock_locator = Mock()
-        mock_locator.count.return_value = 0
-        mock_page.locator.return_value = mock_locator
-
-        with pytest.raises(Exception, match="ログインID入力フィールドが見つかりませんでした"):
-            auth_service._fill_login_id(mock_page)
-
-    def test_fill_password_tries_multiple_selectors(self, auth_service):
-        """パスワード入力で複数のセレクタを試行することを確認"""
-        mock_page = Mock()
-        mock_locator = Mock()
-        mock_locator.count.return_value = 1
-        mock_page.locator.return_value = mock_locator
-
-        auth_service._fill_password(mock_page)
-
-        # 最初のセレクタで成功する
-        mock_page.locator.assert_called_with('#login-form-password')
-        mock_locator.fill.assert_called_once_with("password123")
-
-    def test_fill_password_fallback_to_second_selector(self, auth_service):
-        """パスワード入力で最初のセレクタが失敗した場合に次のセレクタを試行することを確認"""
-        mock_page = Mock()
-
-        # 最初のlocator呼び出しは要素が見つからない
-        first_locator = Mock()
-        first_locator.count.return_value = 0
-
-        # 2番目のlocator呼び出しは成功
-        second_locator = Mock()
-        second_locator.count.return_value = 1
-
-        mock_page.locator.side_effect = [first_locator, second_locator]
-
-        auth_service._fill_password(mock_page)
-
-        # 2つのセレクタが試行されたことを確認
-        assert mock_page.locator.call_count == 2
-        second_locator.fill.assert_called_once_with("password123")
-
-    def test_fill_password_raises_exception_when_no_selector_works(self, auth_service):
-        """すべてのセレクタが失敗した場合に例外を発生させることを確認"""
-        mock_page = Mock()
-        mock_locator = Mock()
-        mock_locator.count.return_value = 0
-        mock_page.locator.return_value = mock_locator
-
-        with pytest.raises(Exception, match="パスワード入力フィールドが見つかりませんでした"):
-            auth_service._fill_password(mock_page)
