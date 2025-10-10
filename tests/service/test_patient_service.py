@@ -77,7 +77,7 @@ class TestPatientService:
 
     def test_fill_birthday_converts_date_format(self, mock_page):
         """誕生日のフォーマット変換が正しく行われることを確認"""
-        birthday = '05/15/1980'  # mm/dd/yyyy
+        birthday = '19800515'  # YYYYMMDD
 
         mock_frame = Mock()
         mock_page.frame_locator.return_value = mock_frame
@@ -86,12 +86,13 @@ class TestPatientService:
 
         PatientService.fill_birthday(mock_page, birthday)
 
-        # dd/mm/yyyy形式に変換されることを確認
-        mock_input.fill.assert_called_once_with('15/05/1980')
+        # dd/mm/yyyy形式に変換されてtypeで入力されることを確認
+        mock_input.click.assert_called_once()
+        mock_input.type.assert_called_once_with('15/05/1980', delay=100)
 
     def test_fill_birthday_presses_enter(self, mock_page):
         """誕生日入力後にEnterキーが押されることを確認"""
-        birthday = '01/20/1990'
+        birthday = '19900120'  # YYYYMMDD
 
         mock_frame = Mock()
         mock_page.frame_locator.return_value = mock_frame
@@ -104,7 +105,7 @@ class TestPatientService:
 
     def test_fill_birthday_waits_after_input(self, mock_page):
         """誕生日入力後の動作を確認"""
-        birthday = '12/31/1985'
+        birthday = '19851231'  # YYYYMMDD
 
         mock_frame = Mock()
         mock_page.frame_locator.return_value = mock_frame
@@ -123,7 +124,7 @@ class TestPatientService:
         mock_frame = Mock()
         mock_page.frame_locator.return_value = mock_frame
         mock_input = Mock()
-        mock_input.fill.side_effect = ValueError("Invalid date format")
+        mock_input.type.side_effect = ValueError("Invalid date format")
         mock_frame.locator.return_value.first = mock_input
 
         # 例外が発生しても処理が継続することを確認（ワーニングとして処理）
@@ -131,11 +132,11 @@ class TestPatientService:
 
     def test_fill_birthday_handles_frame_not_found(self, mock_page):
         """フレームが見つからない場合を適切に処理することを確認"""
-        birthday = '03/10/1995'
+        birthday = '19950310'  # YYYYMMDD
 
         mock_frame = Mock()
         mock_input = Mock()
-        mock_input.fill.side_effect = Exception("Frame not found")
+        mock_input.type.side_effect = Exception("Frame not found")
         mock_frame.locator.return_value.first = mock_input
         mock_page.frame_locator.return_value = mock_frame
 
@@ -155,9 +156,9 @@ class TestPatientService:
         mock_page.get_by_label.assert_any_call("患者ID")
 
     @pytest.mark.parametrize("birthday,expected", [
-        ('01/01/2000', '01/01/2000'),
-        ('12/31/1999', '31/12/1999'),
-        ('06/15/1985', '15/06/1985'),
+        ('20000101', '01/01/2000'),
+        ('19991231', '31/12/1999'),
+        ('19850615', '15/06/1985'),
     ])
     def test_fill_birthday_date_conversion_parametrized(self, mock_page, birthday, expected):
         """様々な誕生日フォーマットの変換を確認"""
@@ -168,4 +169,4 @@ class TestPatientService:
 
         PatientService.fill_birthday(mock_page, birthday)
 
-        mock_input.fill.assert_called_once_with(expected)
+        mock_input.type.assert_called_once_with(expected, delay=100)
