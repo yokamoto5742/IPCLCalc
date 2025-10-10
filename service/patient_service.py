@@ -27,7 +27,7 @@ class PatientService:
         try:
             page.get_by_label("手術日").fill(data['surgery_date'])
             page.get_by_label("手術日").press('Enter')
-            logger.info(f"手術日を入力しました: {surgery_date}")
+            logger.info(f"手術日を入力しました: {data['surgery_date']}")
         except Exception as e:
             try:
                 page.locator('input[name*="surgery"]').first.fill(data['surgery_date'])
