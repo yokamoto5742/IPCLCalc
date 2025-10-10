@@ -27,7 +27,6 @@ class PatientService:
         try:
             page.get_by_label("手術日").fill(data['surgery_date'])
             page.get_by_label("手術日").press('Enter')
-            logger.info(f"手術日を入力しました: {data['surgery_date']}")
         except Exception as e:
             try:
                 page.locator('input[name*="surgery"]').first.fill(data['surgery_date'])
@@ -37,13 +36,39 @@ class PatientService:
 
     @staticmethod
     def fill_birthday(page: Page, birthday: str):
+        """
+        誕生日を入力します。
+        typeメソッドを使用して1文字ずつ入力することで、
+        Webサイトの日付ピッカーが正しく動作するようにします。
+        """
         frame = page.frame_locator('#calculatorFrame')
 
         try:
             birthday_input = frame.locator('input[placeholder="dd/mm/yyyy"]').first
-            birthday_input.fill(birthday)
-            birthday_input.press('Enter')
+
+            # フィールドをクリックしてフォーカス
+            birthday_input.click()
+
+            # 既存の値をクリア（念のため）
+            birthday_input.press('Control+A')
+            birthday_input.press('Delete')
+
+            # typeメソッドで1文字ずつ入力（delay=100msで人間らしい入力速度）
+            birthday_input.type(birthday, delay=100)
             logger.info(f"誕生日を入力しました: {birthday}")
 
+            # 少し待機してからEnterキーを押す
+            birthday_input.press('Enter')
+
+            # 入力後の値を確認（オプション）
+            try:
+                final_value = birthday_input.input_value()
+                if final_value != birthday:
+                    logger.warning(f"⚠️ 入力後の値が異なります: 期待値='{birthday}', 実際値='{final_value}'")
+                else:
+                    logger.info(f"✅ 誕生日が正しく入力されました: {final_value}")
+            except:
+                pass
+
         except Exception as e:
-            logger.warning(f"誕生日入力をスキップしました: {e}")
+            logger.error(f"誕生日入力中にエラーが発生: {e}", exc_info=True)
