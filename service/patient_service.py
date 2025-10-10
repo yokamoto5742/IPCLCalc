@@ -24,13 +24,36 @@ class PatientService:
             except Exception as retry_error:
                 logger.warning("性別選択をスキップしました")
 
+        # 手術日の入力（typeメソッドを使用）
         try:
-            page.get_by_label("手術日").fill(data['surgery_date'])
-            page.get_by_label("手術日").press('Enter')
+            surgery_date_input = page.get_by_label("手術日")
+            surgery_date_input.click()
+            surgery_date_input.press('Control+A')
+            surgery_date_input.press('Delete')
+            surgery_date_input.type(data['surgery_date'], delay=100)
+            logger.info(f"手術日を入力しました: {data['surgery_date']}")
+            surgery_date_input.press('Enter')
+
+            # 入力後の値を確認（オプション）
+            try:
+                final_value = surgery_date_input.input_value()
+                if final_value != data['surgery_date']:
+                    logger.warning(
+                        f"⚠️ 手術日の入力後の値が異なります: 期待値='{data['surgery_date']}', 実際値='{final_value}'")
+                else:
+                    logger.info(f"✅ 手術日が正しく入力されました: {final_value}")
+            except:
+                pass
+
         except Exception as e:
             try:
-                page.locator('input[name*="surgery"]').first.fill(data['surgery_date'])
-                page.locator('input[name*="surgery"]').first.press('Enter')
+                surgery_date_input = page.locator('input[name*="surgery"]').first
+                surgery_date_input.click()
+                surgery_date_input.press('Control+A')
+                surgery_date_input.press('Delete')
+                surgery_date_input.type(data['surgery_date'], delay=100)
+                logger.info(f"手術日を入力しました: {data['surgery_date']}")
+                surgery_date_input.press('Enter')
             except Exception as retry_error:
                 logger.warning(f"手術日入力をスキップしました: {retry_error}")
 
