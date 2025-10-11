@@ -281,21 +281,35 @@ class TestIPCLOrderAutomation:
     @patch('service.automation_service.load_environment_variables')
     @patch('service.automation_service.load_config')
     @patch.dict(os.environ, {'EMAIL': 'test@example.com', 'PASSWORD': 'password123'})
-    @patch('service.automation_service.sync_playwright')
-    def test_process_csv_file_handles_exception(self, mock_playwright, mock_load_config, mock_load_env, mock_mkdir, mock_config, tmp_path):
+    def test_process_csv_file_handles_exception(self, mock_load_config, mock_load_env, mock_mkdir, mock_config, tmp_path):
         """CSVファイル処理時の例外を適切に処理することを確認"""
+        # error_dirを作成
+        error_dir = tmp_path / 'error'
+        error_dir.mkdir(parents=True, exist_ok=True)
+
+        mock_config.get.side_effect = lambda section, key: {
+            ('URL', 'base_url'): 'https://example.com',
+            ('Paths', 'csv_dir'): str(tmp_path),
+            ('Paths', 'calculated_dir'): str(tmp_path / 'calculated'),
+            ('Paths', 'error_dir'): str(error_dir),
+            ('Paths', 'log_dir'): str(tmp_path / 'log'),
+        }.get((section, key), '')
+        mock_config.getboolean.return_value = True
         mock_load_config.return_value = mock_config
 
         automation = IPCLOrderAutomation()
         automation.csv_handler = Mock()
         automation.csv_handler.read_csv_file.side_effect = Exception("CSV read error")
-        automation.update_progress = Mock()
+        automation.save_service.move_csv_to_error = Mock()
 
         csv_path = tmp_path / "test.csv"
         csv_path.write_text("test,data\n1,2")
 
-        with pytest.raises(Exception, match="CSV read error"):
-            automation.process_csv_file(csv_path)
+        # 例外が発生しても、関数は正常に終了し、ファイルをエラーフォルダに移動する
+        automation.process_csv_file(csv_path)
+
+        # CSVファイルがエラーフォルダに移動されることを確認
+        automation.save_service.move_csv_to_error.assert_called_once_with(csv_path, error_dir)
 
     @patch('service.automation_service.Path.mkdir')
     @patch('service.automation_service.load_environment_variables')

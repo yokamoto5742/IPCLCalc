@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 
-from utils.config_manager import get_log_level
+from utils.config_manager import get_log_level, load_config
 
 
 def get_project_root() -> Path:
@@ -41,6 +41,7 @@ def setup_logging(log_directory: str = 'logs', log_retention_days: int = 7, log_
     )
 
     cleanup_old_logs(log_dir_path, log_retention_days, log_name)
+    cleanup_old_files_in_directories(log_retention_days)
     logging.info(f"ログシステムを初期化しました: {log_file}")
     logging.info(f"ログレベル: {log_level_str}")
 
@@ -58,3 +59,32 @@ def cleanup_old_logs(log_directory: Path, retention_days: int, log_name: str):
                     logging.info(f"古いログファイルを削除しました: {file_path.name}")
                 except OSError as e:
                     logging.error(f"ログファイルの削除中にエラーが発生しました {file_path.name}: {str(e)}")
+
+
+def cleanup_old_files_in_directories(retention_days: int):
+    config = load_config()
+    now = datetime.now()
+
+    directories = [
+        config.get('Paths', 'calculated_dir', fallback=None),
+        config.get('Paths', 'error_dir', fallback=None),
+        config.get('Paths', 'pdf_dir', fallback=None)
+    ]
+
+    for directory_path_str in directories:
+        if not directory_path_str:
+            continue
+
+        directory_path = Path(directory_path_str)
+        if not directory_path.exists():
+            continue
+
+        for file_path in directory_path.glob('*'):
+            if file_path.is_file():
+                file_modification_time = datetime.fromtimestamp(file_path.stat().st_mtime)
+                if now - file_modification_time > timedelta(days=retention_days):
+                    try:
+                        file_path.unlink()
+                        logging.info(f"古いファイルを削除しました: {file_path}")
+                    except OSError as e:
+                        logging.error(f"ファイルの削除中にエラーが発生しました {file_path}: {str(e)}")
