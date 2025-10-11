@@ -33,6 +33,7 @@ class IPCLOrderAutomation:
         email = os.getenv('EMAIL')
         password = os.getenv('PASSWORD')
         headless = config.getboolean('Settings', 'headless')
+        timeout = config.getint('Settings', 'timeout')
 
         self.progress_window = ProgressWindow()
         self.csv_handler = CSVHandler()
@@ -49,6 +50,7 @@ class IPCLOrderAutomation:
             lens_calculator_service,
             save_service,
             self.progress_window,
+            timeout,
         )
         self.save_service = save_service
 

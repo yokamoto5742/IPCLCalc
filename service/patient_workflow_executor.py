@@ -20,15 +20,18 @@ class PatientWorkflowExecutor:
         lens_calculator_service: LensCalculatorService,
         save_service: SaveService,
         progress_window: ProgressWindow,
+        timeout: int = 5000,
     ):
         self.auth_service = auth_service
         self.patient_service = patient_service
         self.lens_calculator_service = lens_calculator_service
         self.save_service = save_service
         self.progress_window = progress_window
+        self.timeout = timeout
 
     def execute(self, page: Page, idx: int, total: int, data: dict) -> tuple[bool, Path | None]:
         pdf_path = None
+        page.set_default_timeout(self.timeout)
 
         try:
             self.progress_window.update(f"[{idx}/{total}] Webサイトにログイン中...")
