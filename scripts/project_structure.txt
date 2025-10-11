@@ -1,7 +1,7 @@
 ============================================================
 プロジェクト構造: IPCLCalc
 パス: C:\Users\yokam\PycharmProjects\IPCLCalc
-生成日時: 2025-10-09 15:24:19
+生成日時: 2025-10-11 12:57:01
 ============================================================
 
 └── IPCLCalc
@@ -38,7 +38,6 @@
     ├── utils
     │   ├── config.ini
     │   ├── config_manager.py
-    │   ├── constants.py
     │   └── log_rotation.py
     ├── widgets
     │   ├── __init__.py
