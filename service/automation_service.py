@@ -22,7 +22,6 @@ class IPCLOrderAutomation:
         load_environment_variables()
         config = load_config()
 
-        # ディレクトリ設定
         self.csv_dir = Path(config.get('Paths', 'csv_dir'))
         self.calculated_dir = Path(config.get('Paths', 'calculated_dir'))
         self.pdf_dir = self.csv_dir / 'pdf'
@@ -84,7 +83,6 @@ class IPCLOrderAutomation:
                 browser.close()
 
     def process_csv_file(self, csv_path: Path):
-        """CSVファイルを処理"""
         logger.info(f"処理開始: {csv_path.name}")
 
         all_data = self._read_csv_data(csv_path)
