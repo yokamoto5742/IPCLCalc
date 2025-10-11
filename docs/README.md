@@ -38,7 +38,10 @@ IPCLCalcは、IPCL注文システムへの患者データ入力を自動化す�
 ### その他の機能
 - **自動ブラウザ起動**: 処理完了後、下書きページと保存先フォルダを自動で開く
 - **エンコーディング自動判定**: CP932とUTF-8のCSVファイルに対応
-- **エラーハンドリング**: 処理エラー時のログ出力と安全な終了処理
+- **エラーハンドリング**:
+  - 処理エラー時の詳細なログ出力と安全な終了処理
+  - エラー発生時のCSVファイルを自動的にerrorフォルダに移動（タイムスタンプ付き）
+  - 患者情報を含むエラー詳細のログ記録
 
 ## 対象ユーザー
 - **眼科医療従事者**: IPCL（眼内コンタクトレンズ）の注文業務を行う眼科医療従事者
@@ -139,10 +142,10 @@ headless = True
 ```
 C:\Shinseikai\IPCLCalc\
 ├── csv\
-│   ├── calculated\
-│   ├── error\
-│   └── pdf\
-└── logs\
+│   ├── calculated\     # 処理成功したCSVファイル
+│   ├── error\          # エラー発生時のCSVファイル（タイムスタンプ付き）
+│   └── pdf\            # 計算結果のPDFファイル
+└── logs\               # アプリケーションログ
 ```
 
 ## 使用方法
@@ -531,6 +534,13 @@ IPCLdata_ID{patient_id}_{timestamp}.pdf
 #### move_csv_to_calculated(csv_path: Path)
 処理済みCSVファイルをcalculatedディレクトリに移動します。
 
+#### move_csv_to_error(csv_path: Path, error_dir: Path)
+エラーが発生したCSVファイルをerrorディレクトリに移動します。
+
+**処理内容**:
+- タイムスタンプ付きのファイル名に変更（例: `IPCLdata_ID12345_error_20251011_143025.csv`）
+- エラーログに移動先を記録
+
 ### CSV処理（CSVHandler）
 
 #### read_csv_file(csv_path: Path) -> list[dict]
@@ -587,9 +597,12 @@ pdf_dir = C:\Shinseikai\IPCLCalc\csv\pdf               # PDF保存先
 #### [Settings]
 ```ini
 headless = True             # ヘッドレスモード（True: ブラウザ非表示、False: ブラウザ表示）
+timeout = 5000              # ページ操作のタイムアウト（ミリ秒）
 ```
 
 **開発・デバッグ時**: `headless = False`に設定して動作を確認することを推奨
+
+**タイムアウト設定**: ネットワーク環境に応じて調整可能（デフォルト: 5000ミリ秒 = 5秒）
 
 #### [URL]
 ```ini
