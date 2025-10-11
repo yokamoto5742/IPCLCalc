@@ -63,3 +63,14 @@ class SaveService:
         destination = self.calculated_dir / csv_path.name
         shutil.move(str(csv_path), str(destination))
         logger.info(f"{csv_path.name} を 計算済フォルダに移動しました")
+
+    def move_csv_to_error(self, csv_path: Path, error_dir: Path):
+        error_dir.mkdir(exist_ok=True)
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        base_name = csv_path.stem
+        extension = csv_path.suffix
+        destination = error_dir / f"{base_name}_error_{timestamp}{extension}"
+
+        shutil.move(str(csv_path), str(destination))
+        logger.error(f"{csv_path.name} をエラーフォルダに移動しました: {destination.name}")

@@ -24,6 +24,7 @@ class IPCLOrderAutomation:
 
         self.csv_dir = Path(config.get('Paths', 'csv_dir'))
         self.calculated_dir = Path(config.get('Paths', 'calculated_dir'))
+        self.error_dir = Path(config.get('Paths', 'error_dir'))
         self.pdf_dir = self.csv_dir / 'pdf'
         self.pdf_dir.mkdir(exist_ok=True)
         logger.info(f"PDFダウンロード先: {self.pdf_dir}")
@@ -85,16 +86,36 @@ class IPCLOrderAutomation:
     def process_csv_file(self, csv_path: Path):
         logger.info(f"処理開始: {csv_path.name}")
 
-        all_data = self._read_csv_data(csv_path)
+        try:
+            all_data = self._read_csv_data(csv_path)
+        except Exception as e:
+            logger.exception(f"CSVファイルの読み込み中にエラーが発生しました: {e}")
+            self.progress_window.update(f"[ERROR] CSVファイルの読み込みに失敗しました")
+            self.save_service.move_csv_to_error(csv_path, self.error_dir)
+            return
+
         all_success = True
+        failed_count = 0
 
         for idx, data in enumerate(all_data, 1):
             success = self._process_single_record(idx, len(all_data), data)
             if not success:
                 all_success = False
+                failed_count += 1
 
         if all_success:
             self.save_service.move_csv_to_calculated(csv_path)
+        else:
+            self.save_service.move_csv_to_error(csv_path, self.error_dir)
+            logger.error(
+                f"一部のレコードでエラーが発生しました: {csv_path.name} "
+                f"(失敗: {failed_count}/{len(all_data)}件)"
+            )
+            self.progress_window.update(
+                f"[ERROR] {csv_path.name}\n"
+                f"エラーが発生しました ({failed_count}/{len(all_data)}件失敗)\n"
+                f"エラーフォルダに移動しました"
+            )
 
         logger.info(f"処理完了: {csv_path.name}")
 
