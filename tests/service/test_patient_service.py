@@ -1,5 +1,6 @@
+from unittest.mock import Mock
+
 import pytest
-from unittest.mock import Mock, MagicMock
 
 from service.patient_service import PatientService
 

@@ -1,5 +1,4 @@
 import csv
-from pathlib import Path
 
 import pytest
 
@@ -116,7 +115,7 @@ class TestCSVHandler:
 
     def test_read_csv_file_with_cp932_encoding(self, create_csv_file):
         """CP932エンコーディングのCSVファイルを読み込めることを確認"""
-        csv_path = create_csv_file(encoding='cp932')
+        csv_path = create_csv_file()
         result = CSVHandler.read_csv_file(csv_path)
 
         assert len(result) == 1

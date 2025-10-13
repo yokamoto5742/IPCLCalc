@@ -1,7 +1,5 @@
 import os
-import tkinter as tk
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock, call
+from unittest.mock import Mock, patch
 
 import pytest
 
